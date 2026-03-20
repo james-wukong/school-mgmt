@@ -1,7 +1,8 @@
 package main
 
 import (
-	"io/ioutil"
+	"errors"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -25,16 +26,24 @@ func main() {
 
 func startServer() {
 	gin.SetMode(gin.ReleaseMode)
-	gin.DefaultWriter = ioutil.Discard
+	gin.DefaultWriter = io.Discard
 
 	r := gin.Default()
 
 	template.AddComp(chartjs.NewChart())
 
 	eng := engine.Default()
+	eng.AddConfigFromYAML("./config.yml")
+	// Get the initialized connection
+	conn := eng.PostgresqlConnection()
 
-	if err := eng.AddConfigFromYAML("./config.yml").
-		AddGenerators(tables.Generators).
+	// Check if connection is valid
+	if conn == nil {
+		panic(errors.New("database connection is nil"))
+	}
+
+	if err := eng.AddGenerators(tables.Generators).
+		AddGenerators(tables.GetGenerators(conn)).
 		Use(r); err != nil {
 		panic(err)
 	}
