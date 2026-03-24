@@ -2,8 +2,8 @@
 package tables
 
 import (
-	"github.com/GoAdminGroup/go-admin/modules/db"
 	"github.com/GoAdminGroup/go-admin/plugins/admin/modules/table"
+	"gorm.io/gorm"
 )
 
 // Generators is a map of table models.
@@ -29,13 +29,13 @@ import (
 // example end
 var Generators = map[string]table.Generator{
 
-	"schools":      GetSchoolsTable,
-	"subjects":     GetSubjectsTable,
-	"semesters":    GetSemestersTable,
-	"timeslots":    GetTimeslotsTable,
-	"teachers":     GetTeachersTable,
-	"students":     GetStudentsTable,
-	"classes":      GetClassesTable,
+	// "subjects":     GetSubjectsTable,
+	"schools":   GetSchoolsTable,
+	"semesters": GetSemestersTable,
+	"timeslots": GetTimeslotsTable,
+	// "teachers":     GetTeachersTable,
+	"students": GetStudentsTable,
+	// "classes":      GetClassesTable,
 	"rooms":        GetRoomsTable,
 	"requirements": GetRequirementsTable,
 	"schedules":    GetSchedulesTable,
@@ -44,9 +44,11 @@ var Generators = map[string]table.Generator{
 }
 
 // GetGenerators collects tables that require dbConn
-func GetGenerators(dbConn db.Connection) table.GeneratorList {
+func GetGenerators(db *gorm.DB) table.GeneratorList {
 	return table.GeneratorList{
-		// "menu_items":       GetMenuitemsTable(dbConn),
+		"subjects": GetSubjectsTable(db),
+		"teachers": GetTeachersTable(db),
+		"classes":  GetClassesTable(db),
 		// Add more tables...
 	}
 }

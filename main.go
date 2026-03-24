@@ -16,8 +16,9 @@ import (
 	"github.com/GoAdminGroup/go-admin/template/chartjs"
 	"github.com/gin-gonic/gin"
 
+	"github.com/james-wukong/online-school-mgmt/internal/models"
+	"github.com/james-wukong/online-school-mgmt/internal/tables"
 	"github.com/james-wukong/online-school-mgmt/pages"
-	"github.com/james-wukong/online-school-mgmt/tables"
 )
 
 func main() {
@@ -41,9 +42,10 @@ func startServer() {
 	if conn == nil {
 		panic(errors.New("database connection is nil"))
 	}
+	db := models.Init(conn)
 
 	if err := eng.AddGenerators(tables.Generators).
-		AddGenerators(tables.GetGenerators(conn)).
+		AddGenerators(tables.GetGenerators(db)).
 		Use(r); err != nil {
 		panic(err)
 	}

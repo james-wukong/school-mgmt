@@ -10,12 +10,13 @@ import (
 	"github.com/GoAdminGroup/go-admin/tests/frameworks/gin"
 	"github.com/GoAdminGroup/go-admin/tests/web"
 	"github.com/gavv/httpexpect"
-	"github.com/james-wukong/online-school-mgmt/tables"
+	"github.com/james-wukong/online-school-mgmt/internal/tables"
 )
 
 // 黑盒测试
 func TestMainBlackBox(t *testing.T) {
-	cfg := config.ReadFromJson("./config.json")
+	// cfg := config.ReadFromJson("./config.json")
+	cfg := config.ReadFromYaml("./config.yml")
 	tests.BlackBoxTestSuit(t, gin.NewHandler, cfg.Databases, tables.Generators, func(cfg config.DatabaseList) {
 		// 框架自带数据清理
 		tests.Cleaner(cfg)
