@@ -7,7 +7,7 @@ import (
 type AdminUser struct {
 	// ID uses a custom sequence in Postgres, so we mark it as primaryKey
 	// and let the database handle the default value.
-	ID            uint32 `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
+	ID            uint32 `gorm:"column:id;primaryKey;autoIncrement:true;<-:false" json:"id"`
 	Username      string `gorm:"column:username;type:varchar(100);not null;unique" json:"username"`
 	Password      string `gorm:"column:password;type:varchar(100);not null" json:"password"`
 	Name          string `gorm:"column:name;type:varchar(100);not null" json:"name"`

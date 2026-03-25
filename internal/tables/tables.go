@@ -30,8 +30,8 @@ import (
 var Generators = map[string]table.Generator{
 
 	// "subjects":     GetSubjectsTable,
-	"schools":   GetSchoolsTable,
-	"semesters": GetSemestersTable,
+	"schools": GetSchoolsTable,
+	// "semesters": GetSemestersTable,
 	"timeslots": GetTimeslotsTable,
 	// "teachers":     GetTeachersTable,
 	"students": GetStudentsTable,
@@ -46,9 +46,11 @@ var Generators = map[string]table.Generator{
 // GetGenerators collects tables that require dbConn
 func GetGenerators(db *gorm.DB) table.GeneratorList {
 	return table.GeneratorList{
-		"subjects": GetSubjectsTable(db),
-		"teachers": GetTeachersTable(db),
-		"classes":  GetClassesTable(db),
+		"subjects":    GetSubjectsTable(db),
+		"teachers":    GetTeachersTable(db),
+		"classes":     GetClassesTable(db),
+		"bulkclasses": GetBulkClassesTable(db),
+		"semesters":   GetSemestersTable(db),
 		// Add more tables...
 	}
 }

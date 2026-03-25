@@ -17,7 +17,7 @@ type Subjects struct {
 	RequiresLab bool `gorm:"column:requires_lab;default:false" json:"requires_lab"`
 	IsHeavy     bool `gorm:"column:is_heavy;default:false" json:"is_heavy"`
 	// Relationships (Optional but recommended for Eager Loading)
-	School Schools `gorm:"foreignKey:SchoolID;constraint:OnDelete:CASCADE;" json:"-"`
+	School *Schools `gorm:"foreignKey:SchoolID;constraint:OnDelete:CASCADE;" json:"-"`
 }
 
 func NewSubjects(schoolID int64,

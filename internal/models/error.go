@@ -9,4 +9,5 @@ var (
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrInvalidEmailFormat = errors.New("invalid email format")
 	ErrInvalidTypeAssert  = errors.New("invalid type assert")
+	ErrEmptyAssociations  = errors.New("no associations attached")
 )

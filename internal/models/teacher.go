@@ -15,7 +15,7 @@ const (
 // It uses GORM tags to handle identity columns and automatic timestamps.
 type Teachers struct {
 	// Primary Key with Identity configuration (START WITH 1000)
-	ID int64 `gorm:"primaryKey;autoIncrement:true;autoIncrementIncrement:1" json:"id"`
+	ID int64 `gorm:"primaryKey;autoIncrement:true;autoIncrementIncrement:1;<-:false" json:"id"`
 
 	// Foreign Key to Schools
 	SchoolID int64 `gorm:"not null;index:idx_teachers_school;uniqueIndex:idx_teacher_emp_unique" json:"school_id"`
@@ -48,7 +48,7 @@ type Teachers struct {
 	// joinForeignKey: Column in Join Table for Source -> teacher_subjects.teacher_id
 	// references: Primary Key of "Target" -> Subjects.ID
 	// joinReferences: Column in Join Table for Target -> teacher_subjects.subject_id
-	Subjects []Subjects `gorm:"many2many:teacher_subjects;foreignKey:ID;joinForeignKey:TeacherID;References:ID;joinReferences:SubjectID;constraint:OnDelete:CASCADE;" json:"subjects,omitempty"`
+	Subjects []*Subjects `gorm:"many2many:teacher_subjects;foreignKey:ID;joinForeignKey:TeacherID;References:ID;joinReferences:SubjectID;constraint:OnDelete:CASCADE;" json:"subjects,omitempty"`
 
 	// Belongs To School
 	School *Schools `gorm:"foreignKey:SchoolID;constraint:OnDelete:CASCADE;" json:"school,omitempty"`

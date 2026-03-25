@@ -8,7 +8,9 @@ import (
 	"github.com/GoAdminGroup/go-admin/modules/auth"
 	"github.com/GoAdminGroup/go-admin/modules/db"
 	"github.com/GoAdminGroup/go-admin/plugins/admin/modules/table"
+	"github.com/GoAdminGroup/go-admin/template/icon"
 	"github.com/GoAdminGroup/go-admin/template/types"
+	"github.com/GoAdminGroup/go-admin/template/types/action"
 	"github.com/GoAdminGroup/go-admin/template/types/form"
 	"github.com/james-wukong/online-school-mgmt/internal/services"
 	"gorm.io/gorm"
@@ -20,13 +22,14 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 		classes := table.NewDefaultTable(ctx, table.DefaultConfigWithDriver("postgresql"))
 		user := auth.Auth(ctx)
 		userService := services.NewAdminUserService(dbConn)
-		sch, err := userService.GetUserSchoolID(ctx.Request.Context(), user.Id)
+		semService := services.NewSemesterService(dbConn)
+		u, err := userService.GetUserSchoolID(ctx.Request.Context(), user.Id)
 		if err != nil {
 			panic(err)
 		}
 		info := classes.GetInfo()
 		if !user.IsSuperAdmin() {
-			info = info.Where("school_id", "=", sch.ID)
+			info = info.Where("school_id", "=", u.SchoolID)
 		}
 
 		info.AddField("Id", "id", db.Int8)
@@ -48,9 +51,10 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 				if r, ok := value.Row["semesters_goadmin_join_year"]; !ok || r == 0 {
 					return template.HTML("-") // Return a string or empty template.HTML
 				}
-				// // 2. Safely return the value
+				// 2. Safely return the value
 				return template.HTML(fmt.Sprint(value.Row["semesters_goadmin_join_year"]))
-			})
+			}).
+			FieldSortable()
 		// 增加字段名 Semester Term
 		info.AddField("Semester_Term", "semester", db.Int8).FieldJoin(types.Join{
 			Table:     "semesters",   // The table to join with
@@ -76,7 +80,7 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 				}
 			})
 		// 增加字段名 Semester StartDate
-		info.AddField("Semester_Term", "start_date", db.Int8).FieldJoin(types.Join{
+		info.AddField("Semester_Start", "start_date", db.Int8).FieldJoin(types.Join{
 			Table:     "semesters",   // The table to join with
 			Field:     "semester_id", // The foreign key in current table
 			JoinField: "id",          // The primary key in joined table
@@ -86,11 +90,12 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 				if r, ok := value.Row["semesters_goadmin_join_start_date"]; !ok || r == "" {
 					return template.HTML("-") // Return a string or empty template.HTML
 				}
-				// // 2. Safely return the value
+				// 2. Safely return the value
 				return template.HTML(fmt.Sprint(value.Row["semesters_goadmin_join_start_date"]))
-			})
+			}).
+			FieldSortable()
 		// 增加字段名 Semester EndDate
-		info.AddField("Semester_Term", "end_date", db.Int8).FieldJoin(types.Join{
+		info.AddField("Semester_End", "end_date", db.Int8).FieldJoin(types.Join{
 			Table:     "semesters",   // The table to join with
 			Field:     "semester_id", // The foreign key in current table
 			JoinField: "id",          // The primary key in joined table
@@ -107,17 +112,60 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 		info.AddField("Class", "class", db.Varchar)
 		info.AddField("Student_count", "student_count", db.Int4)
 
+		// Buttons
+		info.AddButton(ctx, "Bulk Create", icon.Tv,
+			action.PopUpWithIframe(
+				"/class/bulk/iframe",
+				"Iframe Example",
+				action.IframeData{
+					Src: "/admin/info/bulkclasses/new",
+				},
+				"900px",
+				"600px",
+			))
+		// info.AddButton(ctx, "ajax", icon.Android, action.Ajax("/admin/ajax",
+		// 	func(ctx *context.Context) (success bool, msg string, data interface{}) {
+		// 		return true, "请求成功，奥利给", ""
+		// 	}))
+
 		info.SetTable("classes").SetTitle("Classes").SetDescription("Classes")
 
 		formList := classes.GetForm()
+		formList.AddField("Semester_id", "semester_id", db.Int8, form.SelectSingle).
+			FieldOptionInitFn(func(val types.FieldModel) types.FieldOptions {
+				var c types.FieldOptions
+				s, err := semService.List(ctx.Request.Context(), u.SchoolID, 6)
+				if err != nil || len(s) == 0 {
+					return nil
+				}
+				for _, v := range s {
+					opt := types.FieldOption{
+						Text: fmt.Sprintf(
+							"ID: %d, Year: %d, Semester: %d",
+							v.ID, v.Year, v.Semester,
+						),
+						Value: fmt.Sprint(v.ID)}
+					if v.ID == val.Row["semester_id"] {
+						opt.Selected = true
+					}
+					c = append(c, opt)
+				}
+
+				return c
+			}).
+			FieldMust().
+			FieldDivider("Semester Settings")
+
 		formList.AddField("Id", "id", db.Int8, form.Default).
-			FieldDisableWhenCreate()
-		formList.AddField("Semester_id", "semester_id", db.Int8, form.Default)
-		formList.AddField("Semester Year", "year", db.Int4, form.Number).FieldDefault("2000")
-		formList.AddField("Semester Year", "semester", db.Int4, form.Number).FieldDefault("1")
-		formList.AddField("Grade", "grade", db.Int4, form.Number)
-		formList.AddField("Student_count", "student_count", db.Int4, form.Number)
-		formList.AddField("Class", "class", db.Varchar, form.Text)
+			FieldDisableWhenCreate().
+			FieldMust().
+			FieldDivider("Class Settings")
+		formList.AddField("Grade", "grade", db.Int4, form.Number).
+			FieldMust()
+		formList.AddField("Class", "class", db.Varchar, form.Text).
+			FieldMust()
+		formList.AddField("Student_count", "student_count", db.Int4, form.Number).
+			FieldMust()
 
 		formList.SetTable("classes").SetTitle("Classes").SetDescription("Classes")
 

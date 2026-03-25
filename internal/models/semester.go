@@ -29,6 +29,8 @@ type Semesters struct {
 
 	// Relationships (Optional but recommended for Eager Loading)
 	School *Schools `gorm:"foreignKey:SchoolID;constraint:OnDelete:CASCADE;" json:"-"`
+	// Has Many: One Semester has many Classes
+	Classes []*Classes `gorm:"foreignKey:SemesterID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
 func NewSemesters(schoolID int64,
