@@ -6,7 +6,6 @@ import (
 )
 
 func GetSchedulesTable(ctx *context.Context) table.Table {
-
 	schedules := table.NewDefaultTable(ctx, table.DefaultConfigWithDriver("postgresql"))
 
 	info := schedules.GetInfo().HideFilterArea()

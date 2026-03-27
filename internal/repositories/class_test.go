@@ -34,13 +34,13 @@ func sampleClass() *models.Classes {
 func classColumns() []string {
 	// Keep in sync with all fields on models.Classes
 	return []string{
-		"id", "semester_id", "grade", "class", "student_count",
+		"id", "school_id", "semester_id", "grade", "class", "student_count",
 	}
 }
 
 func mockClassRow(u *models.Classes) *sqlmock.Rows {
 	return sqlmock.NewRows(classColumns()).AddRow(
-		u.ID, u.SemesterID, u.Grade, u.ClassName, u.StudentCount,
+		u.ID, u.SchoolID, u.SemesterID, u.Grade, u.ClassName, u.StudentCount,
 	)
 }
 

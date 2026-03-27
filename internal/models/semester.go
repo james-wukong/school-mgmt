@@ -28,9 +28,11 @@ type Semesters struct {
 	EndDate   time.Time `gorm:"type:date;not null" json:"end_date"`
 
 	// Relationships (Optional but recommended for Eager Loading)
-	School *Schools `gorm:"foreignKey:SchoolID;constraint:OnDelete:CASCADE;" json:"-"`
+	School *Schools `gorm:"foreignKey:SchoolID;constraint:OnDelete:CASCADE;" json:"school,omitempty"`
 	// Has Many: One Semester has many Classes
-	Classes []*Classes `gorm:"foreignKey:SemesterID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Classes []*Classes `gorm:"foreignKey:SemesterID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"classes,omitempty"`
+	// Has Many: One Semester has many Timeslots
+	Timeslots []*Timeslots `gorm:"foreignKey:SemesterID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"timeslots,omitempty"`
 }
 
 func NewSemesters(schoolID int64,

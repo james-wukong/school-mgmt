@@ -74,7 +74,7 @@ func GetBulkClassesTable(dbConn *gorm.DB) table.Generator {
 			var cls []*model2.Classes
 			// 1. validate input
 			if values.IsEmpty("semester_id", "grades") {
-				return errors.New("name and slug can not be empty")
+				return errors.New("semester id and grades can not be empty")
 			}
 			// Convert the string to int64
 			// base 10 (decimal), bitSize 64 (for int64)

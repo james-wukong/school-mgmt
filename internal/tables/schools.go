@@ -9,7 +9,6 @@ import (
 )
 
 func GetSchoolsTable(ctx *context.Context) table.Table {
-
 	schools := table.NewDefaultTable(ctx, table.DefaultConfigWithDriver("postgresql"))
 
 	info := schools.GetInfo().SetPrimaryKey("id", db.Bigint)

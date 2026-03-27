@@ -30,7 +30,7 @@ type Teachers struct {
 	Email *string `gorm:"type:varchar(100);index:idx_teachers_email" json:"email"`
 	Phone *string `gorm:"type:varchar(20)" json:"phone"`
 
-	HireDate       time.Time `gorm:"type:date;not null" json:"hire_date"`
+	HireDate       time.Time `gorm:"type:date;not null;default:CURRENT_DATE" json:"hire_date"`
 	EmploymentType string    `gorm:"type:varchar(50)" json:"employment_type"` // 'Full-time', 'Part-time', 'Contract'
 
 	MaxClassesPerDay int  `gorm:"default:5" json:"max_classes_per_day"`
@@ -41,7 +41,6 @@ type Teachers struct {
 	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	// --- Relationships ---
-
 	// Many-to-Many relationship with Subjects
 	// The 'many2many' tag points to the join table name in PostgreSQL
 	// foreignKey: Primary Key of "Source" -> Teachers.ID

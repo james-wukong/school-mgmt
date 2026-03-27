@@ -1,3 +1,4 @@
+// Package services
 package services
 
 import (
@@ -26,11 +27,11 @@ func (s *SemesterService) List(
 	return s.repo.List(ctx, schoolID, limit)
 }
 
-func (s *SemesterService) SaveWithClass(ctx context.Context, t *models.Semesters) error {
+func (s *SemesterService) SaveWithAssoc(ctx context.Context, t *models.Semesters) error {
 	if len(t.Classes) == 0 {
 		return models.ErrEmptyAssociations
 	}
-	return s.repo.UpdateWithClasses(ctx, t)
+	return s.repo.UpdateWithAssoc(ctx, t)
 }
 
 func (s *SemesterService) GetByID(ctx context.Context, id int64) (*models.Semesters, error) {
@@ -41,4 +42,10 @@ func (s *SemesterService) AppendClasses(
 	ctx context.Context, t *models.Semesters, c []*models.Classes,
 ) error {
 	return s.repo.AppendClasses(ctx, t, c)
+}
+
+func (s *SemesterService) ReplaceWithTimeslotAssoc(
+	ctx context.Context, t *models.Semesters,
+) error {
+	return s.repo.ReplaceWithTimeslotAssoc(ctx, t)
 }

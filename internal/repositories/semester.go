@@ -9,8 +9,9 @@ import (
 
 type SemesterRepository interface {
 	Create(ctx context.Context, t *models.Semesters) error
-	UpdateWithClasses(ctx context.Context, t *models.Semesters) error
-	UpdateWithClassAssocReplace(ctx context.Context, t *models.Semesters) error
+	UpdateWithAssoc(ctx context.Context, t *models.Semesters) error
+	ReplaceWithClassAssoc(ctx context.Context, t *models.Semesters) error
+	ReplaceWithTimeslotAssoc(ctx context.Context, t *models.Semesters) error
 	AppendClasses(ctx context.Context, t *models.Semesters, c []*models.Classes) error
 	Delete(ctx context.Context, t *models.Semesters) error
 	GetByID(ctx context.Context, id int64) (*models.Semesters, error)
@@ -32,20 +33,31 @@ func (r *semesterRepo) Create(ctx context.Context, t *models.Semesters) error {
 	return r.db.WithContext(ctx).Create(t).Error
 }
 
-func (r *semesterRepo) UpdateWithClasses(ctx context.Context, t *models.Semesters) error {
+func (r *semesterRepo) UpdateWithAssoc(ctx context.Context, t *models.Semesters) error {
 	return r.db.WithContext(ctx).Save(t).Error
 }
 
-func (r *semesterRepo) UpdateWithClassAssocReplace(ctx context.Context, t *models.Semesters) error {
+func (r *semesterRepo) ReplaceWithClassAssoc(ctx context.Context, t *models.Semesters) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. Upsert the Parent
-		if err := tx.Omit("Classes").Save(t).Error; err != nil {
+		if err := tx.Omit("Timeslots", "Classes").Save(t).Error; err != nil {
 			return err
 		}
 
 		// 2. Replace the association
 		// This Upserts the current slice and Deletes/Unlinks others
 		return tx.Model(t).Association("Classes").Replace(t.Classes)
+	})
+}
+
+func (r *semesterRepo) ReplaceWithTimeslotAssoc(ctx context.Context, t *models.Semesters) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1 This Upserts the current slice and Deletes/Unlinks others
+		// 2. Delete all existing timeslots for this semester not in upserted ones in step 1
+		return tx.Model(t).
+			Association("Timeslots").
+			Unscoped().
+			Replace(t.Timeslots)
 	})
 }
 
@@ -72,6 +84,7 @@ func (r *semesterRepo) GetByID(ctx context.Context, id int64) (*models.Semesters
 	err := r.db.WithContext(ctx).
 		Preload("Classes").
 		Preload("School").
+		Preload("Timeslots").
 		First(&s, id).
 		Error
 

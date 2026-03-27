@@ -46,6 +46,16 @@ func mockSemesterRow(u *models.Semesters) *sqlmock.Rows {
 	)
 }
 
+func sampleTimes() []time.Time {
+	var t []time.Time
+	start1, _ := time.Parse(models.TimeSlotLayout, "09:00")
+	end1, _ := time.Parse(models.TimeSlotLayout, "09:45")
+	start2, _ := time.Parse(models.TimeSlotLayout, "10:00")
+	end2, _ := time.Parse(models.TimeSlotLayout, "10:45")
+	t = append(t, start1, end1, start2, end2)
+	return t
+}
+
 // ── Create ────────────────────────────────────────────────────────────────────
 
 func TestSemesterCreate_Success(t *testing.T) {
@@ -54,8 +64,8 @@ func TestSemesterCreate_Success(t *testing.T) {
 	u := sampleSemester()
 
 	u.Classes = []*models.Classes{
-		{SemesterID: u.ID, Grade: 5, ClassName: "A", StudentCount: 30},
-		{SemesterID: u.ID, Grade: 5, ClassName: "B", StudentCount: 28},
+		{SemesterID: u.ID, SchoolID: u.SchoolID, Grade: 5, ClassName: "A", StudentCount: 30},
+		{SemesterID: u.ID, SchoolID: u.SchoolID, Grade: 5, ClassName: "B", StudentCount: 28},
 	}
 
 	// Single auto-increment PK → GORM uses INSERT ... RETURNING id
@@ -68,8 +78,8 @@ func TestSemesterCreate_Success(t *testing.T) {
 	// Note: GORM uses Query because of RETURNING "id"
 	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "classes"`)).
 		WithArgs(
-			u.ID, 5, "A", 30, // First class
-			u.ID, 5, "B", 28, // Second class
+			u.ID, 10, 5, "A", 30, // First class
+			u.ID, 10, 5, "B", 28, // Second class
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(2).AddRow(3))
 	mock.ExpectCommit()
@@ -119,20 +129,20 @@ func TestSemesterCreate_DuplicateEmail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-// ── Update ────────────────────────────────────────────────────────────────────
+// ── UpdateWithAssoc ────────────────────────────────────────────────────────────────────
 
-func TestSemesterUpdateWithClasses_Success(t *testing.T) {
+func TestSemesterUpdateWithAssoc_Class_Success(t *testing.T) {
 	repo, mock := newSemesterRepo(t)
 	ctx := context.Background()
 	u := sampleSemester()
 	u.Classes = []*models.Classes{
-		{ID: 2, SemesterID: u.ID, Grade: 5, ClassName: "A", StudentCount: 30},
-		{ID: 3, SemesterID: u.ID, Grade: 5, ClassName: "B", StudentCount: 28},
+		{ID: 2, SchoolID: u.SchoolID, SemesterID: u.ID, Grade: 5, ClassName: "A", StudentCount: 30},
+		{ID: 3, SchoolID: u.SchoolID, SemesterID: u.ID, Grade: 5, ClassName: "B", StudentCount: 28},
 	}
 	u.Year = 2000
 
 	mock.ExpectBegin()
-	// STEP 1: Parent Update (Matches your latest log)
+	// STEP 1: Parent Update
 	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "semesters" SET`)).
 		WithArgs(
 			u.SchoolID,
@@ -148,21 +158,64 @@ func TestSemesterUpdateWithClasses_Success(t *testing.T) {
 	// Note: Use ExpectQuery because of the RETURNING "id" clause
 	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "classes"`)).
 		WithArgs(
-			u.ID, u.Classes[0].Grade, u.Classes[0].ClassName, u.Classes[0].StudentCount,
-			u.ID, u.Classes[1].Grade, u.Classes[1].ClassName, u.Classes[1].StudentCount,
+			u.ID, u.SchoolID, u.Classes[0].Grade, u.Classes[0].ClassName, u.Classes[0].StudentCount,
+			u.ID, u.SchoolID, u.Classes[1].Grade, u.Classes[1].ClassName, u.Classes[1].StudentCount,
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(2).AddRow(3))
 
 	mock.ExpectCommit()
 
-	err := repo.UpdateWithClasses(ctx, u)
+	err := repo.UpdateWithAssoc(ctx, u)
 
 	require.NoError(t, err)
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestSemesterUpdateWithClasses_DBError(t *testing.T) {
+func TestSemesterUpdateWithAssoc_Timeslot_Success(t *testing.T) {
+	repo, mock := newSemesterRepo(t)
+	ctx := context.Background()
+	times := sampleTimes()
+	u := sampleSemester()
+	u.Timeslots = []*models.Timeslots{
+		{SchoolID: u.SchoolID, SemesterID: u.ID, DayOfWeek: 5,
+			StartTime: times[0], EndTime: times[1]},
+		{SchoolID: u.SchoolID, SemesterID: u.ID, DayOfWeek: 5,
+			StartTime: times[2], EndTime: times[3]},
+	}
+
+	mock.ExpectBegin()
+	// STEP 1: Parent Update
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "semesters" SET`)).
+		WithArgs(
+			u.SchoolID,
+			u.Year, // 2000
+			u.Semester,
+			u.StartDate,
+			u.EndDate,
+			u.ID, // WHERE id = 3
+		).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+
+	// STEP 2: Children Bulk Upsert
+	// Note: Use ExpectQuery because of the RETURNING "id" clause
+	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "timeslots"`)).
+		WithArgs(
+			u.SchoolID, u.ID, u.Timeslots[0].DayOfWeek, u.Timeslots[0].StartTime, u.Timeslots[0].EndTime,
+			u.SchoolID, u.ID, u.Timeslots[1].DayOfWeek, u.Timeslots[1].StartTime, u.Timeslots[1].EndTime,
+		).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(2).AddRow(3))
+
+	mock.ExpectCommit()
+
+	err := repo.UpdateWithAssoc(ctx, u)
+
+	require.NoError(t, err)
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSemesterUpdateWithAssoc_DBError(t *testing.T) {
 	repo, mock := newSemesterRepo(t)
 	ctx := context.Background()
 	u := sampleSemester()
@@ -174,22 +227,22 @@ func TestSemesterUpdateWithClasses_DBError(t *testing.T) {
 		WillReturnError(dbErr)
 	mock.ExpectRollback()
 
-	err := repo.UpdateWithClasses(ctx, u)
+	err := repo.UpdateWithAssoc(ctx, u)
 
 	require.Error(t, err)
 	assert.ErrorIs(t, err, dbErr)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-// ── UpdateWithClassAssocReplace ───────────────────────────────────────────────────-
+// ── ReplaceWithClassAssoc ───────────────────────────────────────────────────-
 
-func TestSemesterUpdateWithClassAssocReplace_Success(t *testing.T) {
+func TestSemesterReplaceWithClassAssoc_Success(t *testing.T) {
 	repo, mock := newSemesterRepo(t)
 	ctx := context.Background()
 	sem := sampleSemester()
 	sem.Classes = []*models.Classes{
-		{ID: 2, SemesterID: sem.ID, Grade: 5, ClassName: "A", StudentCount: 30},
-		{ID: 3, SemesterID: sem.ID, Grade: 5, ClassName: "B", StudentCount: 28},
+		{ID: 2, SemesterID: sem.ID, SchoolID: sem.SchoolID, Grade: 5, ClassName: "A", StudentCount: 30},
+		{ID: 3, SemesterID: sem.ID, SchoolID: sem.SchoolID, Grade: 5, ClassName: "B", StudentCount: 28},
 	}
 
 	mock.ExpectBegin()
@@ -202,8 +255,8 @@ func TestSemesterUpdateWithClassAssocReplace_Success(t *testing.T) {
 	// 2. Bulk Upsert of the current slice
 	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "classes"`)).
 		WithArgs(
-			sem.ID, sem.Classes[0].Grade, sem.Classes[0].ClassName, sem.Classes[0].StudentCount,
-			sem.ID, sem.Classes[1].Grade, sem.Classes[1].ClassName, sem.Classes[1].StudentCount,
+			sem.ID, sem.SchoolID, sem.Classes[0].Grade, sem.Classes[0].ClassName, sem.Classes[0].StudentCount,
+			sem.ID, sem.SchoolID, sem.Classes[1].Grade, sem.Classes[1].ClassName, sem.Classes[1].StudentCount,
 		).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(2).AddRow(3))
 
@@ -219,7 +272,46 @@ func TestSemesterUpdateWithClassAssocReplace_Success(t *testing.T) {
 
 	mock.ExpectCommit()
 
-	err := repo.UpdateWithClassAssocReplace(ctx, sem)
+	err := repo.ReplaceWithClassAssoc(ctx, sem)
+
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+// ── ReplaceWithTimeslotAssoc ───────────────────────────────────────────────────-
+
+func TestSemesterReplaceWithTimeslotAssoc_Success(t *testing.T) {
+	repo, mock := newSemesterRepo(t)
+	ctx := context.Background()
+	times := sampleTimes()
+	sem := sampleSemester()
+	sem.Timeslots = []*models.Timeslots{
+		{ID: 2, SemesterID: sem.ID, SchoolID: sem.SchoolID,
+			DayOfWeek: 5, StartTime: times[0], EndTime: times[1]},
+		{ID: 3, SemesterID: sem.ID, SchoolID: sem.SchoolID,
+			DayOfWeek: 5, StartTime: times[2], EndTime: times[3]},
+	}
+
+	mock.ExpectBegin()
+
+	// Expectation 1. Bulk insert of the current slice
+	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "timeslots"`)).
+		WithArgs(
+			sem.SchoolID, sem.ID,
+			sem.Timeslots[0].DayOfWeek, sem.Timeslots[0].StartTime, sem.Timeslots[0].EndTime,
+			sem.SchoolID, sem.ID,
+			sem.Timeslots[1].DayOfWeek, sem.Timeslots[1].StartTime, sem.Timeslots[1].EndTime,
+		).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(2).AddRow(3))
+
+	// Expectation 2. Delete from timeslots with semester id
+	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "timeslots" WHERE`)).
+		WithArgs(sem.Timeslots[0].ID, sem.Timeslots[1].ID, sem.ID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	mock.ExpectCommit()
+
+	err := repo.ReplaceWithTimeslotAssoc(ctx, sem)
 
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
@@ -234,6 +326,7 @@ func TestSemesterAppendClasses_Success(t *testing.T) {
 	var cls []*models.Classes
 	cls = append(cls, &models.Classes{
 		SemesterID:   3,
+		SchoolID:     10,
 		Grade:        2,
 		ClassName:    "A",
 		StudentCount: 30,
@@ -243,7 +336,7 @@ func TestSemesterAppendClasses_Success(t *testing.T) {
 	mock.ExpectBegin()
 	// Expect the Insert for the new class with the SemesterID pre-filled by GORM
 	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "classes"`)).
-		WithArgs(cls[0].SemesterID, cls[0].Grade, cls[0].ClassName, cls[0].StudentCount).
+		WithArgs(cls[0].SemesterID, cls[0].SchoolID, cls[0].Grade, cls[0].ClassName, cls[0].StudentCount).
 		WillReturnRows(sqlmock.NewRows([]string{"grade"}).AddRow(2))
 	mock.ExpectCommit()
 
@@ -331,6 +424,7 @@ func TestSemesterGetByID_Found(t *testing.T) {
 	u := sampleSemester()
 	sch := sampleSchool()
 	cls := sampleClass()
+	slot := sampleTimeslot()
 
 	// EXPECTATION 1: Main goadmin_users query
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "semesters"`)).
@@ -345,6 +439,11 @@ func TestSemesterGetByID_Found(t *testing.T) {
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "schools" WHERE "schools"`)).
 		WithArgs(u.SchoolID).
 		WillReturnRows(mockSchoolRow(sch))
+
+	// EXPECTATION 4: Timeslots preload
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "timeslots" WHERE "timeslots"`)).
+		WithArgs(u.ID).
+		WillReturnRows(mockTimeslotRow(slot))
 
 	result, err := repo.GetByID(ctx, u.ID)
 

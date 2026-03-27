@@ -8,7 +8,6 @@ import (
 )
 
 func GetStudentsTable(ctx *context.Context) table.Table {
-
 	students := table.NewDefaultTable(ctx, table.DefaultConfigWithDriver("postgresql"))
 
 	info := students.GetInfo()

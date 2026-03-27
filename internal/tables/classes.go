@@ -29,7 +29,7 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 		}
 		info := classes.GetInfo()
 		if !user.IsSuperAdmin() {
-			info = info.Where("school_id", "=", u.SchoolID)
+			info = info.Where("classes.school_id", "=", u.SchoolID)
 		}
 
 		info.AddField("Id", "id", db.Int8)
@@ -38,10 +38,10 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 			shoolIDField.FieldHide()
 		}
 
-		info.AddField("Semester_id", "semester_id", db.Int8)
+		info.AddField("Sem id", "semester_id", db.Int8).FieldWidth(100)
 
 		// 增加字段名 Semester Year
-		info.AddField("Semester_Year", "year", db.Int8).FieldJoin(types.Join{
+		info.AddField("Sem Year", "year", db.Int8).FieldJoin(types.Join{
 			Table:     "semesters",   // The table to join with
 			Field:     "semester_id", // The foreign key in current table
 			JoinField: "id",          // The primary key in joined table
@@ -54,9 +54,9 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 				// 2. Safely return the value
 				return template.HTML(fmt.Sprint(value.Row["semesters_goadmin_join_year"]))
 			}).
-			FieldSortable()
+			FieldSortable().FieldWidth(100)
 		// 增加字段名 Semester Term
-		info.AddField("Semester_Term", "semester", db.Int8).FieldJoin(types.Join{
+		info.AddField("Sem Term", "semester", db.Int8).FieldJoin(types.Join{
 			Table:     "semesters",   // The table to join with
 			Field:     "semester_id", // The foreign key in current table
 			JoinField: "id",          // The primary key in joined table
@@ -78,9 +78,9 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 				default:
 					return template.HTML("-")
 				}
-			})
+			}).FieldWidth(100)
 		// 增加字段名 Semester StartDate
-		info.AddField("Semester_Start", "start_date", db.Int8).FieldJoin(types.Join{
+		info.AddField("Sem Start", "start_date", db.Int8).FieldJoin(types.Join{
 			Table:     "semesters",   // The table to join with
 			Field:     "semester_id", // The foreign key in current table
 			JoinField: "id",          // The primary key in joined table
@@ -93,9 +93,9 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 				// 2. Safely return the value
 				return template.HTML(fmt.Sprint(value.Row["semesters_goadmin_join_start_date"]))
 			}).
-			FieldSortable()
+			FieldSortable().FieldWidth(100)
 		// 增加字段名 Semester EndDate
-		info.AddField("Semester_End", "end_date", db.Int8).FieldJoin(types.Join{
+		info.AddField("Sem End", "end_date", db.Int8).FieldJoin(types.Join{
 			Table:     "semesters",   // The table to join with
 			Field:     "semester_id", // The foreign key in current table
 			JoinField: "id",          // The primary key in joined table
@@ -107,16 +107,16 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 				}
 				// // 2. Safely return the value
 				return template.HTML(fmt.Sprint(value.Row["semesters_goadmin_join_end_date"]))
-			})
-		info.AddField("Grade", "grade", db.Int4)
-		info.AddField("Class", "class", db.Varchar)
+			}).FieldWidth(100)
+		info.AddField("Grade", "grade", db.Int4).FieldWidth(100)
+		info.AddField("Class", "class", db.Varchar).FieldWidth(100)
 		info.AddField("Student_count", "student_count", db.Int4)
 
 		// Buttons
 		info.AddButton(ctx, "Bulk Create", icon.Tv,
 			action.PopUpWithIframe(
 				"/class/bulk/iframe",
-				"Iframe Example",
+				"Iframe Class",
 				action.IframeData{
 					Src: "/admin/info/bulkclasses/new",
 				},

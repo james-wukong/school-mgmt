@@ -8,7 +8,6 @@ import (
 )
 
 func GetRoomsTable(ctx *context.Context) table.Table {
-
 	rooms := table.NewDefaultTable(ctx, table.DefaultConfigWithDriver("postgresql"))
 
 	info := rooms.GetInfo()

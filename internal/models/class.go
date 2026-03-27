@@ -9,6 +9,9 @@ type Classes struct {
 	// Foreign Key to Semester
 	SemesterID int64      `gorm:"column:semester_id;not null;uniqueIndex:idx_semester_grade_class" json:"semester_id"`
 	Semester   *Semesters `gorm:"foreignKey:SemesterID;constraint:OnDelete:CASCADE" json:"semester,omitempty"`
+	// Foreign Key to School
+	SchoolID int64    `gorm:"column:school_id;not null;uniqueIndex:idx_rooms_school_code" json:"school_id"`
+	School   *Schools `gorm:"foreignKey:SchoolID;constraint:OnDelete:CASCADE" json:"school,omitempty"`
 
 	// Academic Details
 	Grade        int    `gorm:"column:grade;not null;uniqueIndex:idx_semester_grade_class" json:"grade"`
@@ -16,11 +19,12 @@ type Classes struct {
 	StudentCount int    `gorm:"column:student_count;default:40" json:"student_count"`
 }
 
-func NewClasses(semesterID int64,
+func NewClasses(schoolID, semesterID int64,
 	grade, studentCount int,
 	className string,
 ) *Classes {
 	return &Classes{
+		SchoolID:     schoolID,
 		SemesterID:   semesterID,
 		Grade:        grade,
 		ClassName:    className,

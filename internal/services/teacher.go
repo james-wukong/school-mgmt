@@ -20,16 +20,7 @@ func NewTeacherService(db *gorm.DB) *TeacherService {
 }
 
 func (s *TeacherService) GetTeacher(ctx context.Context, id int64) (*models.Teachers, error) {
-	teacher, err := s.repo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if !teacher.IsActive {
-		return nil, errors.New("teacher is inactive")
-	}
-
-	return teacher, nil
+	return s.repo.GetByID(ctx, id)
 }
 
 func (s *TeacherService) CreateTeacher(ctx context.Context, t *models.Teachers) error {
@@ -38,4 +29,29 @@ func (s *TeacherService) CreateTeacher(ctx context.Context, t *models.Teachers) 
 	}
 
 	return s.repo.Create(ctx, t)
+}
+
+func (s *TeacherService) CreateWithTeacherSubject(
+	ctx context.Context, t *models.Teachers, ts []*models.TeacherSubjects,
+) error {
+
+	return s.repo.CreateWithTeacherSubject(ctx, t, ts)
+}
+
+func (s *TeacherService) UpdateStatus(ctx context.Context, t *models.Teachers) error {
+	return s.repo.UpdateTeacherStatus(ctx, t)
+}
+
+func (s *TeacherService) UpdateWithAssoc(ctx context.Context, t *models.Teachers) error {
+	return s.repo.Update(ctx, t)
+}
+
+func (s *TeacherService) ReplaceWithSubjectAssoc(ctx context.Context, t *models.Teachers) error {
+	return s.repo.ReplaceWithSubjectAssoc(ctx, t)
+}
+
+func (s *TeacherService) UpdateWithTeacherSubject(
+	ctx context.Context, t *models.Teachers, ts []*models.TeacherSubjects,
+) error {
+	return s.repo.UpdateWithTeacherSubject(ctx, t, ts)
 }

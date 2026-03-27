@@ -17,7 +17,14 @@ type Subjects struct {
 	RequiresLab bool `gorm:"column:requires_lab;default:false" json:"requires_lab"`
 	IsHeavy     bool `gorm:"column:is_heavy;default:false" json:"is_heavy"`
 	// Relationships (Optional but recommended for Eager Loading)
-	School *Schools `gorm:"foreignKey:SchoolID;constraint:OnDelete:CASCADE;" json:"-"`
+	School *Schools `gorm:"foreignKey:SchoolID;constraint:OnDelete:CASCADE;" json:"school,omitempty"`
+	// Many-to-Many relationship with Teachers
+	// The 'many2many' tag points to the join table name in PostgreSQL
+	// foreignKey: Primary Key of "Source" -> Subjects.ID
+	// joinForeignKey: Column in Join Table for Source -> teacher_subjects.subject_id
+	// references: Primary Key of "Target" -> Teacher.ID
+	// joinReferences: Column in Join Table for Target -> teacher_subjects.teacher_id
+	Teachers []*Teachers `gorm:"many2many:teacher_subjects;foreignKey:ID;joinForeignKey:SubjectID;References:ID;joinReferences:TeacherID;constraint:OnDelete:CASCADE;" json:"teachers,omitempty"`
 }
 
 func NewSubjects(schoolID int64,

@@ -8,7 +8,6 @@ import (
 )
 
 func GetRequirementsTable(ctx *context.Context) table.Table {
-
 	requirements := table.NewDefaultTable(ctx, table.DefaultConfigWithDriver("postgresql"))
 
 	info := requirements.GetInfo()
