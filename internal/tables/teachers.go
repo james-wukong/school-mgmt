@@ -284,8 +284,6 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 		})
 
 		formList.HideResetButton()
-		formList.HideBackButton()
-
 		formList.SetTable("teachers").SetTitle("Teachers").SetDescription("Teachers")
 
 		return teachers

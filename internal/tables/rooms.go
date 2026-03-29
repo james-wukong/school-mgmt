@@ -140,7 +140,6 @@ func GetRoomsTable(dbConn *gorm.DB) table.Generator {
 			FieldHide().FieldNowWhenUpdate()
 
 		formList.HideResetButton()
-		formList.HideBackButton()
 		formList.SetTable("rooms").SetTitle("Rooms").SetDescription("Rooms")
 
 		return rooms

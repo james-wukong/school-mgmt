@@ -83,7 +83,6 @@ func GetSemestersTable(dbConn *gorm.DB) table.Generator {
 			FieldMust()
 
 		formList.HideResetButton()
-		formList.HideBackButton()
 		formList.SetTable("semesters").SetTitle("Semesters").SetDescription("Semesters")
 
 		return semesters

@@ -222,7 +222,6 @@ func GetTimeslotsTable(dbConn *gorm.DB) table.Generator {
 			})
 
 		formList.HideResetButton()
-		formList.HideBackButton()
 		formList.SetTable("timeslots").SetTitle("Timeslots").SetDescription("Timeslots")
 
 		return timeslots
