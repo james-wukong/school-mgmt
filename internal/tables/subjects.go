@@ -79,6 +79,8 @@ func GetSubjectsTable(dbConn *gorm.DB) table.Generator {
 			FieldMust()
 		formList.AddField("Description", "description", db.Text, form.RichText)
 
+		formList.HideResetButton()
+		formList.HideBackButton()
 		formList.SetTable("subjects").SetTitle("Subjects").SetDescription("Subjects")
 
 		return subjects

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/GoAdminGroup/go-admin/context"
 	"github.com/GoAdminGroup/go-admin/modules/auth"
@@ -27,6 +28,10 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 		user := auth.Auth(ctx)
 		userService := services.NewAdminUserService(dbConn)
 		teacherService := services.NewTeacherService(dbConn)
+		subService := services.NewSubjectService(dbConn)
+		semService := services.NewSemesterService(dbConn)
+		// slotService := services.NewTimeslotService(dbConn)
+
 		u, err := userService.GetUserSchoolID(ctx.Request.Context(), user.Id)
 		if err != nil {
 			panic(err)
@@ -35,7 +40,6 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 		if !user.IsSuperAdmin() {
 			info = info.Where("school_id", "=", u.SchoolID)
 		}
-
 		info.AddField("Id", "id", db.Int8)
 		shoolIDField := info.AddField("School_id", "school_id", db.Int8)
 		if !user.IsSuperAdmin() {
@@ -85,7 +89,6 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 			FieldOptionInitFn(func(val types.FieldModel) types.FieldOptions {
 				var c types.FieldOptions
 				var teacher *model2.Teachers
-				subService := services.NewSubjectService(dbConn)
 				subs, err := subService.List(ctx.Request.Context(), u.SchoolID, 0)
 				if err != nil {
 					panic(err)
@@ -118,6 +121,7 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 
 				return c
 			})
+
 		formList.AddField("First_name", "first_name", db.Varchar, form.Text).FieldMust()
 		formList.AddField("Last_name", "last_name", db.Varchar, form.Text).FieldMust()
 		formList.AddField("Email", "email", db.Varchar, form.Email)
@@ -131,9 +135,42 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 				{Text: "PartTime", Value: string(model2.PartTime)},
 			}).
 			FieldDefault("Permanent")
-		formList.AddField("Hire_date", "hire_date", db.Date, form.Date)
+		formList.AddField("Hire_date", "hire_date", db.Date, form.Date).
+			FieldDefault(time.Now().Format(model2.TimeDateLayout)).
+			FieldMust()
 		formList.AddField("Max_classes_per_day", "max_classes_per_day", db.Int4, form.Number).
 			FieldDefault("5")
+
+		formList.AddField("Semester_id", "semester_id", db.Int8, form.SelectSingle).
+			FieldOptionInitFn(func(_ types.FieldModel) types.FieldOptions {
+				var c types.FieldOptions
+				s, err := semService.List(ctx.Request.Context(), u.SchoolID, 6)
+				if err != nil || len(s) == 0 {
+					return nil
+				}
+				for _, v := range s {
+					opt := types.FieldOption{
+						Text: fmt.Sprintf(
+							"ID: %d, Year: %d, Semester: %d",
+							v.ID, v.Year, v.Semester,
+						),
+						Value: fmt.Sprint(v.ID),
+					}
+					c = append(c, opt)
+				}
+
+				return c
+			}).
+			FieldOnChooseCustom(printDualListBoxJS(
+				"semester_id",
+				"timeslots[]",
+				"/admin/ajax/teacher/sem_timeslot",
+				map[string]any{"school_id": fmt.Sprint(u.SchoolID)},
+			)).
+			FieldMust().
+			FieldDivider("Semester Timeslot Settings")
+		formList.AddField("Timeslots", "timeslots", db.Varchar, form.SelectBox)
+
 		formList.AddField("Created_at", "created_at", db.Timestamptz, form.Datetime).
 			FieldHide().FieldNowWhenInsert()
 		formList.AddField("Updated_at", "updated_at", db.Timestamptz, form.Datetime).
@@ -165,13 +202,21 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 					SubjectID: subID,
 				})
 			}
-			if err := teacherService.CreateWithTeacherSubject(
-				ctx.Request.Context(), teacher, ts); err != nil {
+			var tt []*model2.TeacherTimeslots
+			for _, slotID := range req.TimeslotIDs {
+				tt = append(tt, &model2.TeacherTimeslots{
+					TeacherID:  teacher.ID,
+					TimeslotID: slotID,
+				})
+			}
+			if err := teacherService.CreateWithAssoc(
+				ctx.Request.Context(), teacher, ts, tt); err != nil {
 				return err
 			}
 
 			return nil
 		})
+
 		// 取代更新函数
 		formList.SetUpdateFn(func(values form2.Values) error {
 			// 1. Identify the Record
@@ -198,6 +243,7 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 
 			// 3. Handle Full Update
 			var ts []*model2.TeacherSubjects
+			var tt []*model2.TeacherTimeslots
 			req, err := MapAndValidate[dto.TeacherUpdateRequest](values)
 			if err != nil {
 				// Check if it's a validation error specifically
@@ -219,12 +265,26 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 					SubjectID: subID,
 				})
 			}
-			if err := teacherService.UpdateWithTeacherSubject(
-				ctx.Request.Context(), teacher, ts); err != nil {
+			for _, slotID := range req.TimeslotIDs {
+				tt = append(tt, &model2.TeacherTimeslots{
+					TeacherID:  teacher.ID,
+					TimeslotID: slotID,
+				})
+			}
+			//
+			semID, err := strconv.ParseInt(values.Get("semester_id"), 10, 64)
+			if err != nil {
+				return err
+			}
+			if err := teacherService.UpdateWithAssoc(
+				ctx.Request.Context(), teacher, ts, tt, semID); err != nil {
 				return err
 			}
 			return nil
 		})
+
+		formList.HideResetButton()
+		formList.HideBackButton()
 
 		formList.SetTable("teachers").SetTitle("Teachers").SetDescription("Teachers")
 

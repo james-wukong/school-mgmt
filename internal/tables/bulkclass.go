@@ -66,8 +66,6 @@ func GetBulkClassesTable(dbConn *gorm.DB) table.Generator {
 			FieldHelpMsg("eg: 1-3, 2-5,3-8, 左边是年级，右边是班级数量，年级和班级用-分割，年级之间用，分割").
 			FieldDivider("Class Settings")
 
-		formList.SetTable("classes").SetTitle("Classes").SetDescription("Classes")
-
 		// 取代新增函数
 		formList.SetInsertFn(func(values form2.Values) error {
 			// values 为传入的表单参数
@@ -119,6 +117,9 @@ func GetBulkClassesTable(dbConn *gorm.DB) table.Generator {
 			return nil
 		})
 
+		formList.HideResetButton()
+		formList.HideBackButton()
+		formList.SetTable("classes").SetTitle("Classes").SetDescription("Classes")
 		return classes
 	}
 }

@@ -58,6 +58,8 @@ func GetSchoolsTable(ctx *context.Context) table.Table {
 	formList.AddField("Updated_at", "updated_at", db.Timestamptz, form.Datetime).
 		FieldHide().FieldNowWhenUpdate()
 
+	formList.HideResetButton()
+	formList.HideBackButton()
 	formList.SetTable("schools").SetTitle("Schools").SetDescription("Schools")
 
 	return schools

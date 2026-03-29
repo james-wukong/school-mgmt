@@ -32,6 +32,8 @@ func GetRequirementsTable(ctx *context.Context) table.Table {
 	formList.AddField("Min_day_gap", "min_day_gap", db.Int4, form.Number)
 	formList.AddField("Preferred_days", "preferred_days", db.Varchar, form.Text)
 
+	formList.HideResetButton()
+	formList.HideBackButton()
 	formList.SetTable("requirements").SetTitle("Requirements").SetDescription("Requirements")
 
 	return requirements

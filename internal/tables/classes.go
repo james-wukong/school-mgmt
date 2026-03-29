@@ -167,6 +167,8 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 		formList.AddField("Student_count", "student_count", db.Int4, form.Number).
 			FieldMust()
 
+		formList.HideResetButton()
+		formList.HideBackButton()
 		formList.SetTable("classes").SetTitle("Classes").SetDescription("Classes")
 
 		return classes

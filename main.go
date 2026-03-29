@@ -16,6 +16,7 @@ import (
 	"github.com/GoAdminGroup/go-admin/template/chartjs"
 	"github.com/gin-gonic/gin"
 
+	"github.com/james-wukong/online-school-mgmt/internal/api/ajax"
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	"github.com/james-wukong/online-school-mgmt/internal/tables"
 	"github.com/james-wukong/online-school-mgmt/pages"
@@ -52,12 +53,19 @@ func startServer() {
 
 	r.Static("/uploads", "./uploads")
 
+	// AjAX api
+	eng.Data("POST", "/admin/ajax/teacher/sem_timeslot",
+		ajax.AjaxTeacherSemesterTSHanlder(db),
+		false,
+	)
 	eng.HTML("GET", "/admin", pages.GetDashBoard)
 	eng.HTMLFile("GET", "/admin/hello", "./html/hello.tmpl", map[string]interface{}{
 		"msg": "Hello world",
 	})
 
-	_ = r.Run(":8091")
+	if err := r.Run(":8091"); err != nil {
+		panic(err)
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)

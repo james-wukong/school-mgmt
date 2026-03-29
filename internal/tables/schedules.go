@@ -16,5 +16,7 @@ func GetSchedulesTable(ctx *context.Context) table.Table {
 
 	formList.SetTable("schedules").SetTitle("Schedules").SetDescription("Schedules")
 
+	formList.HideResetButton()
+	formList.HideBackButton()
 	return schedules
 }

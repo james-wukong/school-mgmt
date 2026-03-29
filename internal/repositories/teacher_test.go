@@ -180,48 +180,6 @@ func TestTeacherUpdateTeacherStatus_DBError(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-// ── UpdateWithTeacherSubject ────────────────────────────────────────────────────────────────────
-
-func TestTeacherUpdateWithTeacherSubject_Success(t *testing.T) {
-	repo, mock := newTeacherRepo(t)
-	ctx := context.Background()
-	u := sampleTeacher()
-	u.IsActive = false
-	u.Subjects = []*models.Subjects{
-		{ID: 1, SchoolID: 10, Name: "Mathematics", Code: "MATH101"},
-		{ID: 2, SchoolID: 10, Name: "Physics", Code: "PHYS101"},
-	}
-	ts := []*models.TeacherSubjects{
-		{TeacherID: 1, SubjectID: 1},
-		{TeacherID: 1, SubjectID: 2},
-	}
-
-	mock.ExpectBegin()
-	// Expectation 1. update main: teachers table
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "teachers"`)).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	// Expectation 2. delete from teacher_subjecst where teacher id =
-	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "teacher_subjects" WHERE`)).
-		WithArgs(u.ID).
-		WillReturnResult(sqlmock.NewResult(2, 2))
-
-	// Expectation 3. insert new teacher-subject pairs
-	mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "teacher_subjects" ("teacher_id","subject_id")`)).
-		WithArgs(
-			u.ID, u.Subjects[0].ID,
-			u.ID, u.Subjects[1].ID,
-		).
-		WillReturnResult(sqlmock.NewResult(2, 2))
-	mock.ExpectCommit()
-
-	err := repo.UpdateWithTeacherSubject(ctx, u, ts)
-
-	require.NoError(t, err)
-	assert.NoError(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
 // ── ReplaceWithSubjectAssoc ───────────────────────────────────────────────────
 //
 // Transaction sequence for many2many Replace with Unscoped:
@@ -233,6 +191,7 @@ func TestTeacherUpdateWithTeacherSubject_Success(t *testing.T) {
 
 func sampleTeacher111() *models.Teachers {
 	email := "jane@school.com"
+	hire := time.Now()
 	return &models.Teachers{
 		ID:               1000,
 		SchoolID:         10,
@@ -240,7 +199,7 @@ func sampleTeacher111() *models.Teachers {
 		FirstName:        "Jane",
 		LastName:         "Doe",
 		Email:            &email,
-		HireDate:         time.Now(),
+		HireDate:         hire,
 		EmploymentType:   "Full-time",
 		MaxClassesPerDay: 5,
 		IsActive:         true,

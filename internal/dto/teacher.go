@@ -34,7 +34,8 @@ type TeacherBase struct {
 	IsActive         bool `form:"is_active"` // Booleans don't need 'required' (false is a zero value)
 
 	// Many-to-Many: GoAdmin sends multi-selects as a slice of strings or IDs
-	SubjectIDs []int64 `form:"subjects[]" validate:"omitempty,unique"`
+	SubjectIDs  []int64 `form:"subjects[]" validate:"omitempty,unique"`
+	TimeslotIDs []int64 `form:"timeslots[]" validate:"omitempty,unique"`
 }
 
 type TeacherCreateRequest struct {

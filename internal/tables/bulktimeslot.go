@@ -109,8 +109,6 @@ func GetBulkTimeslotsTable(dbConn *gorm.DB) table.Generator {
 			FieldHelpMsg(`采用json格式: {"day":[{"start_time": time, "end_time": time}]}`).
 			FieldDivider("Timeslot Settings")
 
-		formList.SetTable("timeslots").SetTitle("Timeslots").SetDescription("Timeslots")
-
 		// 取代新增函数
 		formList.SetInsertFn(func(values form2.Values) error {
 			// values 为传入的表单参数
@@ -147,6 +145,10 @@ func GetBulkTimeslotsTable(dbConn *gorm.DB) table.Generator {
 
 			return err
 		})
+
+		formList.HideResetButton()
+		formList.HideBackButton()
+		formList.SetTable("timeslots").SetTitle("Timeslots").SetDescription("Timeslots")
 
 		return timeslots
 	}

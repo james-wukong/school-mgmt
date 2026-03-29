@@ -82,6 +82,8 @@ func GetSemestersTable(dbConn *gorm.DB) table.Generator {
 		formList.AddField("End_date", "end_date", db.Date, form.Date).
 			FieldMust()
 
+		formList.HideResetButton()
+		formList.HideBackButton()
 		formList.SetTable("semesters").SetTitle("Semesters").SetDescription("Semesters")
 
 		return semesters

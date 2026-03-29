@@ -47,7 +47,8 @@ type Teachers struct {
 	// joinForeignKey: Column in Join Table for Source -> teacher_subjects.teacher_id
 	// references: Primary Key of "Target" -> Subjects.ID
 	// joinReferences: Column in Join Table for Target -> teacher_subjects.subject_id
-	Subjects []*Subjects `gorm:"many2many:teacher_subjects;foreignKey:ID;joinForeignKey:TeacherID;References:ID;joinReferences:SubjectID;constraint:OnDelete:CASCADE;" json:"subjects,omitempty"`
+	Subjects  []*Subjects  `gorm:"many2many:teacher_subjects;foreignKey:ID;joinForeignKey:TeacherID;References:ID;joinReferences:SubjectID;constraint:OnDelete:CASCADE;" json:"subjects,omitempty"`
+	Timeslots []*Timeslots `gorm:"many2many:teacher_timeslots;foreignKey:ID;joinForeignKey:TeacherID;References:ID;joinReferences:TimeslotID;constraint:OnDelete:CASCADE;" json:"timeslots,omitempty"`
 
 	// Belongs To School
 	School *Schools `gorm:"foreignKey:SchoolID;constraint:OnDelete:CASCADE;" json:"school,omitempty"`

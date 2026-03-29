@@ -31,27 +31,33 @@ func (s *TeacherService) CreateTeacher(ctx context.Context, t *models.Teachers) 
 	return s.repo.Create(ctx, t)
 }
 
-func (s *TeacherService) CreateWithTeacherSubject(
-	ctx context.Context, t *models.Teachers, ts []*models.TeacherSubjects,
+func (s *TeacherService) CreateWithAssoc(
+	ctx context.Context, t *models.Teachers,
+	ts []*models.TeacherSubjects, tt []*models.TeacherTimeslots,
 ) error {
+	return s.repo.CreateWithAssoc(ctx, t, ts, tt)
+}
 
-	return s.repo.CreateWithTeacherSubject(ctx, t, ts)
+func (s *TeacherService) CreateWithTeacherTimeslot(
+	ctx context.Context, t *models.Teachers, tt []*models.TeacherTimeslots,
+) error {
+	return s.repo.CreateWithTeacherTimeslot(ctx, t, tt)
 }
 
 func (s *TeacherService) UpdateStatus(ctx context.Context, t *models.Teachers) error {
 	return s.repo.UpdateTeacherStatus(ctx, t)
 }
 
-func (s *TeacherService) UpdateWithAssoc(ctx context.Context, t *models.Teachers) error {
-	return s.repo.Update(ctx, t)
+func (s *TeacherService) UpdateWithAssoc(
+	ctx context.Context,
+	t *models.Teachers,
+	ts []*models.TeacherSubjects,
+	tt []*models.TeacherTimeslots,
+	semID int64,
+) error {
+	return s.repo.UpdateWithAssoc(ctx, t, ts, tt, semID)
 }
 
 func (s *TeacherService) ReplaceWithSubjectAssoc(ctx context.Context, t *models.Teachers) error {
 	return s.repo.ReplaceWithSubjectAssoc(ctx, t)
-}
-
-func (s *TeacherService) UpdateWithTeacherSubject(
-	ctx context.Context, t *models.Teachers, ts []*models.TeacherSubjects,
-) error {
-	return s.repo.UpdateWithTeacherSubject(ctx, t, ts)
 }
