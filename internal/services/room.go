@@ -37,8 +37,9 @@ func (s *RoomService) UpdateWithAssoc(
 	ctx context.Context,
 	t *models.Rooms,
 	rt []*models.RoomTimeslots,
+	semID int64,
 ) error {
-	return s.repo.UpdateWithAssoc(ctx, t, rt)
+	return s.repo.UpdateWithAssoc(ctx, t, rt, semID)
 }
 
 func (s *RoomService) GetRoom(ctx context.Context, id int64) (*models.Rooms, error) {

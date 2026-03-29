@@ -18,6 +18,7 @@ type RoomRepository interface {
 	UpdateWithAssoc(
 		ctx context.Context, t *models.Rooms,
 		tt []*models.RoomTimeslots,
+		semID int64,
 	) error
 	GetByID(ctx context.Context, id int64) (*models.Rooms, error)
 }
@@ -80,8 +81,10 @@ func (r *roomRepo) UpdateRoomStatus(
 // removes previously attached room-timeslot and room-timeslot pairs
 // and insert new pairs
 func (r *roomRepo) UpdateWithAssoc(
-	ctx context.Context, t *models.Rooms,
+	ctx context.Context,
+	t *models.Rooms,
 	tt []*models.RoomTimeslots,
+	semID int64,
 ) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 1. Upsert the Room
@@ -89,9 +92,14 @@ func (r *roomRepo) UpdateWithAssoc(
 			return err
 		}
 
-		// 2. Remove the previous room-timeslot pairs
+		// 2 Remove the previous teacher-timeslot pair for the semester
+		subQuery := tx.Model(&models.Timeslots{}).
+			Select("id").
+			Where("semester_id = ?", semID)
 		if err := tx.Where("room_id = ?", t.ID).
-			Delete(&models.RoomTimeslots{}).Error; err != nil {
+			Where("timeslot_id IN (?)", subQuery).
+			Delete(&models.RoomTimeslots{}).
+			Error; err != nil {
 			return err
 		}
 

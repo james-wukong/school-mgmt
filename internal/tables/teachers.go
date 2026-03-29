@@ -77,7 +77,8 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 			schoolField.FieldHide()
 		}
 
-		formList.AddField("Employee_id", "employee_id", db.Int8, form.Text).FieldMust()
+		formList.AddField("Employee_id", "employee_id", db.Int8, form.Text).FieldMust().
+			FieldDivider("Teacher Settings")
 		formList.AddField("Is_active", "is_active", db.Bool, form.Switch).
 			FieldOptions(types.FieldOptions{
 				{Text: "Yes", Value: "true"},

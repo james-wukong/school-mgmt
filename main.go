@@ -58,6 +58,10 @@ func startServer() {
 		ajax.AjaxTeacherSemesterTSHanlder(db),
 		false,
 	)
+	eng.Data("POST", "/admin/ajax/room/sem_timeslot",
+		ajax.AjaxRoomSemesterTSHanlder(db),
+		false,
+	)
 	eng.HTML("GET", "/admin", pages.GetDashBoard)
 	eng.HTMLFile("GET", "/admin/hello", "./html/hello.tmpl", map[string]interface{}{
 		"msg": "Hello world",

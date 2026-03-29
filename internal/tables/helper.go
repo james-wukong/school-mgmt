@@ -54,8 +54,11 @@ func printDualListBoxJS(sourceField, targetField, url string, params ...map[stri
     $sourceField.off('change').on('change', function() {
 		var value = $(this).val();
 		var id = $('[name="id"]').val() || 0;
-		if (!value) return; 
-
+		if (!value) {
+			$targetField.empty().bootstrapDualListbox('refresh');
+			return; 
+		}
+			
 		$.ajax({
 			url: '%s?id=' + id + '&value=' + value + '&%s',
 			type: 'POST',

@@ -12,23 +12,23 @@ import (
 	"gorm.io/gorm"
 )
 
-func AjaxTeacherSemesterTSHanlder(dbConn *gorm.DB) context.Handler {
+func AjaxRoomSemesterTSHanlder(dbConn *gorm.DB) context.Handler {
 
 	// 1. Authenticate the request
 	// 3. Return JSON response
 	// This matches the 'res.code' check in your JavaScript
 	return func(ctx *context.Context) {
 		var options []map[string]any
-		var teacher *model2.Teachers
+		var room *model2.Rooms
 		var isUpdate bool
 
 		// 1. Get params from query
-		teacherID, err := strconv.ParseInt(ctx.Query("id"), 10, 64)
+		roomID, err := strconv.ParseInt(ctx.Query("id"), 10, 64)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, map[string]interface{}{
 				"code": http.StatusBadRequest,
 				"msg":  err.Error(),
-				"data": map[string]any{"teacher id": ctx.Query("id")},
+				"data": map[string]any{"room id": ctx.Query("id")},
 			})
 			return
 		}
@@ -65,14 +65,14 @@ func AjaxTeacherSemesterTSHanlder(dbConn *gorm.DB) context.Handler {
 			return
 		}
 		// 3. Check update
-		if teacherID != 0 {
+		if roomID != 0 {
 			isUpdate = true
 		}
 
 		// 3. Get teacher
-		teacherService := services.NewTeacherService(dbConn)
+		roomService := services.NewRoomService(dbConn)
 		if isUpdate {
-			teacher, err = teacherService.GetTeacher(ctx.Request.Context(), teacherID)
+			room, err = roomService.GetRoom(ctx.Request.Context(), roomID)
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, map[string]interface{}{
 					"code": http.StatusBadRequest,
@@ -94,7 +94,7 @@ func AjaxTeacherSemesterTSHanlder(dbConn *gorm.DB) context.Handler {
 			}
 
 			if isUpdate {
-				if exists := slices.ContainsFunc(teacher.Timeslots,
+				if exists := slices.ContainsFunc(room.Timeslots,
 					func(t *model2.Timeslots) bool {
 						return t.ID == s.ID
 					}); exists {
