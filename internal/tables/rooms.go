@@ -89,6 +89,9 @@ func GetRoomsTable(dbConn *gorm.DB) table.Generator {
 		formList.AddField("Capacity", "capacity", db.Int4, form.Number).
 			FieldDefault("50").
 			FieldMust()
+
+		formList.AddField("Floor_number", "floor_number", db.Int4, form.Number)
+		formList.AddField("Building", "building", db.Varchar, form.Text)
 		formList.AddField("Is_active", "is_active", db.Bool, form.Switch).
 			FieldOptions(types.FieldOptions{
 				{Text: "Yes", Value: "true"},
@@ -126,8 +129,6 @@ func GetRoomsTable(dbConn *gorm.DB) table.Generator {
 			FieldDivider("Semester Timeslot Settings")
 		formList.AddField("Timeslots", "timeslots", db.Varchar, form.SelectBox)
 
-		formList.AddField("Floor_number", "floor_number", db.Int4, form.Number)
-		formList.AddField("Building", "building", db.Varchar, form.Text)
 		formList.AddField("Created_at", "created_at", db.Timestamptz, form.Datetime).
 			FieldHide().FieldNowWhenInsert()
 		formList.AddField("Updated_at", "updated_at", db.Timestamptz, form.Datetime).
