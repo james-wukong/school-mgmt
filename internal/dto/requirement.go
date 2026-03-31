@@ -22,11 +22,10 @@ type RequirementBase struct {
 	Version decimal.Decimal `form:"version" csv:"version" json:"version" validate:"required"`
 
 	// relationships
-	School   models.Schools   `form:"foreignKey:SchoolID" csv:"school_assoc_,inline" json:"-" validate:"school,omitempty"`
-	Semester models.Semesters `form:"foreignKey:SemeseterID" csv:"semester_assoc_,inline" json:"-" validate:"semester,omitempty"`
-	Subject  models.Subjects  `form:"foreignKey:SubjectID" csv:"subject_assoc_,inline" json:"-" validate:"subject,omitempty"`
-	Teacher  models.Teachers  `form:"foreignKey:TeacherID" csv:"teacher_assoc_,inline" json:"-" validate:"teacher,omitempty"`
-	Class    models.Classes   `form:"foreignKey:ClassID" csv:"class_assoc_,inline" json:"-" validate:"class,omitempty"`
+	Semester SemesterCreateRequest `csv:"semester_assoc_,inline" json:"-" validate:"semester,omitempty"`
+	Subject  SubjectCreateRequest  `csv:"subject_assoc_,inline" json:"-" validate:"subject,omitempty"`
+	Teacher  TeacherCreateRequest  `csv:"teacher_assoc_,inline" json:"-" validate:"teacher,omitempty"`
+	Class    ClassCreateRequest    `csv:"class_assoc_,inline" json:"-" validate:"class,omitempty"`
 }
 
 type RequirementCreateRequest struct {
@@ -39,6 +38,22 @@ type RequirementUpdateRequest struct {
 }
 
 func (req *RequirementBase) toModel() (*models.Requirements, error) {
+	sem, err := req.Semester.ToModel()
+	if err != nil {
+		return nil, err
+	}
+	sub, err := req.Subject.ToModel()
+	if err != nil {
+		return nil, err
+	}
+	tch, err := req.Teacher.ToModel()
+	if err != nil {
+		return nil, err
+	}
+	cls, err := req.Class.ToModel()
+	if err != nil {
+		return nil, err
+	}
 	return &models.Requirements{
 		SchoolID:       req.SchoolID,
 		SemesterID:     req.SemesterID,
@@ -49,6 +64,10 @@ func (req *RequirementBase) toModel() (*models.Requirements, error) {
 		MinDayGap:      req.MinDayGap,
 		PreferredDays:  req.PreferredDays,
 		Version:        req.Version,
+		Semester:       sem,
+		Subject:        sub,
+		Teacher:        tch,
+		Class:          cls,
 	}, nil
 }
 

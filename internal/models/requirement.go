@@ -17,9 +17,9 @@ type Requirements struct {
 	Version        decimal.Decimal `gorm:"column:version;type:numeric(10,2);default:1.00" json:"version"`
 
 	// Relationships for Eager Loading (Preload)
-	School   Schools   `gorm:"foreignKey:SchoolID" json:"school,omitempty"`
-	Semester Semesters `gorm:"foreignKey:SemesterID" json:"semester,omitempty"`
-	Subject  Subjects  `gorm:"foreignKey:SubjectID" json:"subject,omitempty"`
-	Teacher  Teachers  `gorm:"foreignKey:TeacherID" json:"teacher,omitempty"`
-	Class    Classes   `gorm:"foreignKey:ClassID" json:"class,omitempty"`
+	School   *Schools   `gorm:"foreignKey:SchoolID" json:"school,omitempty"`
+	Semester *Semesters `gorm:"foreignKey:SemesterID" json:"semester,omitempty"`
+	Subject  *Subjects  `gorm:"foreignKey:SubjectID" json:"subject,omitempty"`
+	Teacher  *Teachers  `gorm:"foreignKey:TeacherID" json:"teacher,omitempty"`
+	Class    *Classes   `gorm:"foreignKey:ClassID" json:"class,omitempty"`
 }

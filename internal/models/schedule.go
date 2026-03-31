@@ -29,8 +29,8 @@ type Schedules struct {
 	UpdatedAt     time.Time       `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
 
 	// Relationship mapping
-	Requirement Requirements `gorm:"foreignKey:RequirementID" json:"requirement,omitempty"`
-	Room        Rooms        `gorm:"foreignKey:RoomID" json:"room,omitempty"`
-	Semester    Semesters    `gorm:"foreignKey:SemesterID" json:"semester,omitempty"`
-	Timeslot    Timeslots    `gorm:"foreignKey:TimeslotID" json:"timeslot,omitempty"`
+	Requirement *Requirements `gorm:"foreignKey:RequirementID" json:"requirement,omitempty"`
+	Room        *Rooms        `gorm:"foreignKey:RoomID" json:"room,omitempty"`
+	Semester    *Semesters    `gorm:"foreignKey:SemesterID" json:"semester,omitempty"`
+	Timeslot    *Timeslots    `gorm:"foreignKey:TimeslotID" json:"timeslot,omitempty"`
 }
