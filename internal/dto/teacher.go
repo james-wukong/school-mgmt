@@ -1,9 +1,6 @@
 package dto
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	"github.com/james-wukong/online-school-mgmt/internal/types"
 )
@@ -54,11 +51,6 @@ type TeacherStatusUpdateRequest struct {
 }
 
 func (req *TeacherBase) toModel() (*models.Teachers, error) {
-	// Handle complex conversions like strings to time.Time
-	hireDate, err := time.Parse(models.TimeDateLayout, req.HireDate)
-	if err != nil {
-		return nil, fmt.Errorf("invalid hire date format: %v", err)
-	}
 
 	return &models.Teachers{
 		SchoolID:         req.SchoolID,
@@ -67,7 +59,7 @@ func (req *TeacherBase) toModel() (*models.Teachers, error) {
 		LastName:         req.LastName,
 		Email:            &req.Email, // Mapping string to *string
 		Phone:            &req.Phone,
-		HireDate:         hireDate,
+		HireDate:         req.HireDate,
 		EmploymentType:   req.EmploymentType,
 		MaxClassesPerDay: req.MaxClassesPerDay,
 		IsActive:         req.IsActive,

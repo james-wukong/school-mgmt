@@ -7,8 +7,8 @@ import (
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 )
 
-type TeacherBase struct {
-	// School context is usually required for every teacher
+type SubjectBase struct {
+	// School context is usually required for every subject
 	SchoolID int64 `form:"school_id" csv:"school_id" json:"school_id" validate:"required,gt=0"`
 
 	// Employee ID: Must be unique, so we ensure it's provided and positive
@@ -38,28 +38,23 @@ type TeacherBase struct {
 	TimeslotIDs []int64 `form:"timeslots[]" csv:"-" json:"-" validate:"omitempty,unique"`
 }
 
-type TeacherCreateRequest struct {
-	TeacherBase
+type SubjectCreateRequest struct {
+	SubjectBase
 }
 
-type TeacherUpdateRequest struct {
+type SubjectUpdateRequest struct {
 	ID int64 `form:"id" validate:"required"` // The ID is mandatory
-	TeacherBase
+	SubjectBase
 }
 
-type TeacherStatusUpdateRequest struct {
-	ID       int64 `form:"id" validate:"required"` // The ID is mandatory
-	IsActive bool  `form:"is_active"`
-}
-
-func (req *TeacherBase) toModel() (*models.Teachers, error) {
+func (req *SubjectBase) toModel() (*models.Subjects, error) {
 	// Handle complex conversions like strings to time.Time
 	hireDate, err := time.Parse(models.TimeDateLayout, req.HireDate)
 	if err != nil {
 		return nil, fmt.Errorf("invalid hire date format: %v", err)
 	}
 
-	return &models.Teachers{
+	return &models.Subjects{
 		SchoolID:         req.SchoolID,
 		EmployeeID:       req.EmployeeID,
 		FirstName:        req.FirstName,
@@ -73,11 +68,11 @@ func (req *TeacherBase) toModel() (*models.Teachers, error) {
 	}, nil
 }
 
-func (req *TeacherCreateRequest) ToModel() (*models.Teachers, error) {
+func (req *SubjectCreateRequest) ToModel() (*models.Subjects, error) {
 	return req.toModel()
 }
 
-func (req *TeacherUpdateRequest) ToModel() (*models.Teachers, error) {
+func (req *SubjectUpdateRequest) ToModel() (*models.Subjects, error) {
 	m, err := req.toModel()
 	if err != nil {
 		return nil, err
@@ -85,11 +80,4 @@ func (req *TeacherUpdateRequest) ToModel() (*models.Teachers, error) {
 	// Manually attach the ID since it's not in the Base
 	m.ID = req.ID
 	return m, nil
-}
-
-func (req *TeacherStatusUpdateRequest) ToModel() *models.Teachers {
-	return &models.Teachers{
-		ID:       req.ID,
-		IsActive: req.IsActive,
-	}
 }

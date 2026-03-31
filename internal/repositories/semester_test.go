@@ -10,6 +10,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	repo "github.com/james-wukong/online-school-mgmt/internal/repositories"
+	"github.com/james-wukong/online-school-mgmt/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -30,7 +31,7 @@ func sampleSemester() *models.Semesters {
 		SchoolID:  10,
 		Year:      2025,
 		Semester:  1,
-		StartDate: start,
+		StartDate: types.CivilDate(start),
 	}
 }
 

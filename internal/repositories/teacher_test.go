@@ -10,6 +10,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	repo "github.com/james-wukong/online-school-mgmt/internal/repositories"
+	"github.com/james-wukong/online-school-mgmt/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -200,7 +201,7 @@ func sampleTeacher111() *models.Teachers {
 		FirstName:        "Jane",
 		LastName:         "Doe",
 		Email:            &email,
-		HireDate:         hire,
+		HireDate:         types.CivilDate(hire),
 		EmploymentType:   "Full-time",
 		MaxClassesPerDay: 5,
 		IsActive:         true,
