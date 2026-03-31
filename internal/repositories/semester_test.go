@@ -1,4 +1,4 @@
-package repositories
+package repositories_test
 
 import (
 	"context"
@@ -9,15 +9,16 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/james-wukong/online-school-mgmt/internal/models"
+	repo "github.com/james-wukong/online-school-mgmt/internal/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
 
-func newSemesterRepo(t *testing.T) (SemesterRepository, sqlmock.Sqlmock) {
+func newSemesterRepo(t *testing.T) (repo.SemesterRepository, sqlmock.Sqlmock) {
 	t.Helper()
 	gormDB, mock := setupMockDB(t)
-	return NewSemesterRepository(gormDB), mock
+	return repo.NewSemesterRepository(gormDB), mock
 }
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────

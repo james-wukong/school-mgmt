@@ -59,7 +59,6 @@ func GetSchoolsTable(ctx *context.Context) table.Table {
 		FieldHide().FieldNowWhenUpdate()
 
 	formList.HideResetButton()
-	formList.HideBackButton()
 	formList.SetTable("schools").SetTitle("Schools").SetDescription("Schools")
 
 	return schools

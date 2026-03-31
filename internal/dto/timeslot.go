@@ -9,16 +9,6 @@ import (
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 )
 
-const (
-	Monday models.DayOfWeek = iota + 1
-	Tuesday
-	Wednesday
-	Thursday
-	Friday
-	Saturday
-	Sunday
-)
-
 type HourMinute time.Time
 
 type ClassTimes struct {
@@ -31,6 +21,9 @@ type ClassTimes struct {
 // it checks if that type has an UnmarshalJSON([]byte) error method
 func (hm *HourMinute) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
+	if s == "" {
+		return nil
+	}
 	t, err := time.Parse("15:04", s)
 	if err != nil {
 		return err
@@ -92,13 +85,13 @@ func (s Schedule) MapToTimeslots(semesterID, schoolID int64) []*models.Timeslots
 
 func ParseDay(key string) models.DayOfWeek {
 	var dayMap = map[string]models.DayOfWeek{
-		"monday":    Monday,
-		"tuesday":   Tuesday,
-		"wednesday": Wednesday,
-		"thursday":  Thursday,
-		"friday":    Friday,
-		"saturday":  Saturday,
-		"sunday":    Sunday,
+		"monday":    models.Monday,
+		"tuesday":   models.Tuesday,
+		"wednesday": models.Wednesday,
+		"thursday":  models.Thursday,
+		"friday":    models.Friday,
+		"saturday":  models.Saturday,
+		"sunday":    models.Sunday,
 	}
 	normalized := strings.ToLower(key)
 
@@ -106,5 +99,5 @@ func ParseDay(key string) models.DayOfWeek {
 		return day
 	}
 
-	return Monday
+	return models.Monday
 }

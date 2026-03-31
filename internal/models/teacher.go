@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/james-wukong/online-school-mgmt/internal/types"
+)
 
 type ContractType string
 
@@ -30,8 +34,8 @@ type Teachers struct {
 	Email *string `gorm:"type:varchar(100);index:idx_teachers_email" json:"email"`
 	Phone *string `gorm:"type:varchar(20)" json:"phone"`
 
-	HireDate       time.Time `gorm:"type:date;not null;default:CURRENT_DATE" json:"hire_date"`
-	EmploymentType string    `gorm:"type:varchar(50)" json:"employment_type"` // 'Full-time', 'Part-time', 'Contract'
+	HireDate       types.CivilDate `gorm:"type:date;not null;default:CURRENT_DATE" json:"hire_date"`
+	EmploymentType string          `gorm:"type:varchar(50)" json:"employment_type"` // 'Full-time', 'Part-time', 'Contract'
 
 	MaxClassesPerDay int  `gorm:"default:5" json:"max_classes_per_day"`
 	IsActive         bool `gorm:"not null;default:true;index:idx_teachers_active" json:"is_active"`

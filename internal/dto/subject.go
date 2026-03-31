@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/james-wukong/online-school-mgmt/internal/models"
-	"github.com/james-wukong/online-school-mgmt/internal/types"
 )
 
 type TeacherBase struct {
@@ -25,7 +24,7 @@ type TeacherBase struct {
 	// Dates from HTML forms come as strings (e.g., "2026-03-27")
 	// The form decoder handles the conversion to time.Time if configured,
 	// otherwise, use a string and parse it in the logic.
-	HireDate types.CivilDate `form:"hire_date" csv:"hire_date" json:"hire_date" validate:"omitempty,datetime=2006-01-02"`
+	HireDate string `form:"hire_date" csv:"hire_date" json:"hire_date" validate:"omitempty,datetime=2006-01-02"`
 
 	// Restricted set of values
 	EmploymentType string `form:"employment_type" csv:"employment_type" json:"employment_type" validate:"omitempty,oneof=FullTime PartTime Contract Permanent"`

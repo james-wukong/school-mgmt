@@ -1,4 +1,4 @@
-package repositories
+package repositories_test
 
 import (
 	"context"
@@ -8,15 +8,16 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/james-wukong/online-school-mgmt/internal/models"
+	repo "github.com/james-wukong/online-school-mgmt/internal/repositories"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
 
-func newAdminUserRepo(t *testing.T) (AdminUserRepository, sqlmock.Sqlmock) {
+func newAdminUserRepo(t *testing.T) (repo.AdminUserRepository, sqlmock.Sqlmock) {
 	t.Helper()
 	gormDB, mock := setupMockDB(t)
-	return NewAdminUserRepository(gormDB), mock
+	return repo.NewAdminUserRepository(gormDB), mock
 }
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────

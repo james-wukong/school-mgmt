@@ -1,6 +1,6 @@
 package models
 
-import "time"
+import "github.com/james-wukong/online-school-mgmt/internal/types"
 
 const (
 	TimeDateLayout = "2006-01-02"
@@ -24,8 +24,8 @@ type Semesters struct {
 	Year     int `gorm:"not null" json:"year"`
 	Semester int `gorm:"not null" json:"semester"`
 	// StartDate and EndDate use time.Time.
-	StartDate time.Time `gorm:"type:date;not null" json:"start_date"`
-	EndDate   time.Time `gorm:"type:date;not null" json:"end_date"`
+	StartDate types.CivilDate `gorm:"type:date;not null" json:"start_date"`
+	EndDate   types.CivilDate `gorm:"type:date;not null" json:"end_date"`
 
 	// Relationships (Optional but recommended for Eager Loading)
 	School *Schools `gorm:"foreignKey:SchoolID;constraint:OnDelete:CASCADE;" json:"school,omitempty"`

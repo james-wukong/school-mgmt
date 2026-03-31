@@ -10,6 +10,8 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-playground/form/v4 v4.3.0
 	github.com/go-playground/validator/v10 v10.30.1
+	github.com/jszwec/csvutil v1.10.0
+	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.11.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1

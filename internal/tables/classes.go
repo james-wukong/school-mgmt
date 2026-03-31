@@ -113,7 +113,7 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 		info.AddField("Student_count", "student_count", db.Int4)
 
 		// Buttons
-		info.AddButton(ctx, "Bulk Create", icon.Tv,
+		info.AddButton(ctx, "Bulk Class Create", icon.Tv,
 			action.PopUpWithIframe(
 				"/class/bulk/iframe",
 				"Iframe Class",

@@ -142,7 +142,7 @@ func GetTimeslotsTable(dbConn *gorm.DB) table.Generator {
 			})
 
 		// Buttons
-		info.AddButton(ctx, "Bulk Create", icon.Tv,
+		info.AddButton(ctx, "Bulk Timeslots Create", icon.Tv,
 			action.PopUpWithIframe(
 				"/timeslot/bulk/iframe",
 				"Iframe Timeslot",

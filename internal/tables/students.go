@@ -49,7 +49,6 @@ func GetStudentsTable(ctx *context.Context) table.Table {
 	formList.AddField("Phone", "phone", db.Varchar, form.Text)
 
 	formList.HideResetButton()
-	formList.HideBackButton()
 	formList.SetTable("students").SetTitle("Students").SetDescription("Students")
 
 	return students

@@ -33,7 +33,6 @@ type RoomStatusUpdateRequest struct {
 }
 
 func (req *RoomBase) toModel() (*models.Rooms, error) {
-
 	return &models.Rooms{
 		SchoolID:    req.SchoolID,
 		Code:        req.Code,
