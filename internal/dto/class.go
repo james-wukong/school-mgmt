@@ -6,10 +6,10 @@ import (
 
 type ClassBase struct {
 	// School context is usually required for every class
-	SemesterID   int64  `form:"semester_id" csv:"semester_id" json:"semester_id" validate:"required,gt=0"`
-	SchoolID     int64  `form:"school_id" csv:"school_id" json:"school_id" validate:"required,gt=0"`
+	SemesterID   int64  `form:"semester_id" csv:"semester_id" json:"semester_id" validate:"-"`
+	SchoolID     int64  `form:"school_id" csv:"school_id" json:"school_id" validate:"-"`
 	Grade        int    `form:"grade" csv:"grade" json:"grade" validate:"required,gt=0"`
-	ClassName    string `form:"class" csv:"class" json:"class" validate:"required,min=2,max=100"`
+	ClassName    string `form:"class" csv:"class" json:"class" validate:"required,min=1,max=100"`
 	StudentCount int    `form:"student_count" csv:"student_count" json:"student_count" validate:"omitempty,gt=0"`
 }
 
@@ -18,7 +18,7 @@ type ClassCreateRequest struct {
 }
 
 type ClassUpdateRequest struct {
-	ID int64 `form:"id" validate:"required"` // The ID is mandatory
+	ID int64 `form:"id" csv:"id" json:"id" validate:"required"` // The ID is mandatory
 	ClassBase
 }
 

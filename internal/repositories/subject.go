@@ -13,6 +13,7 @@ type SubjectRepository interface {
 	Update(ctx context.Context, t *models.Subjects) error
 	Delete(ctx context.Context, t *models.Subjects) error
 	GetByID(ctx context.Context, id int64) (*models.Subjects, error)
+	ExistByModel(ctx context.Context, t *models.Subjects) bool
 	List(ctx context.Context, schoolID int64, limit int) ([]*models.Subjects, error)
 }
 
@@ -56,6 +57,18 @@ func (r *subjectRepo) GetByID(ctx context.Context, id int64) (*models.Subjects, 
 	}
 
 	return &s, nil
+}
+
+func (r *subjectRepo) ExistByModel(ctx context.Context, t *models.Subjects) bool {
+	var exists bool
+	r.db.WithContext(ctx).
+		Model(&models.Subjects{}).
+		Select("count(*) > 0").
+		Where(t).
+		Limit(1).
+		Find(&exists)
+
+	return exists
 }
 
 func (r *subjectRepo) List(

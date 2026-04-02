@@ -13,6 +13,7 @@ type ClassRepository interface {
 	Update(ctx context.Context, t *models.Classes) error
 	UpdateWithSemester(ctx context.Context, t *models.Classes) error
 	Delete(ctx context.Context, t *models.Classes) error
+	ExistByModel(ctx context.Context, t *models.Classes) bool
 	GetByID(ctx context.Context, id int64) (*models.Classes, error)
 }
 
@@ -47,6 +48,18 @@ func (r *classRepo) UpdateWithSemester(ctx context.Context, t *models.Classes) e
 
 func (r *classRepo) Delete(ctx context.Context, t *models.Classes) error {
 	return r.db.WithContext(ctx).Delete(t).Error
+}
+
+func (r *classRepo) ExistByModel(ctx context.Context, t *models.Classes) bool {
+	var exists bool
+	r.db.WithContext(ctx).
+		Model(&models.Classes{}).
+		Select("count(*) > 0").
+		Where(t).
+		Limit(1).
+		Find(&exists)
+
+	return exists
 }
 
 func (r *classRepo) GetByID(ctx context.Context, id int64) (*models.Classes, error) {

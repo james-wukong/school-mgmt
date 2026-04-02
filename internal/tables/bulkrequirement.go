@@ -48,52 +48,36 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 							"ID: %d, Year: %d, Semester: %d",
 							v.ID, v.Year, v.Semester,
 						),
-						Value: fmt.Sprint(v.ID)}
-					if v.ID == val.Row["semester_id"] {
-						opt.Selected = true
+						Value: fmt.Sprint(v.ID),
 					}
 					c = append(c, opt)
 				}
+				c[len(c)-1].Selected = true
 
 				return c
 			}).
 			FieldMust().
 			FieldDivider("Semester Settings")
 
-		formList.AddField("Choose Source Type", "sourceType", db.Tinyint, form.SelectSingle).
+		formList.AddField("Choose Source Type", "source_type", db.Tinyint, form.SelectSingle).
 			FieldOptions(types.FieldOptions{
 				{Text: "JSON", Value: "0"},
 				{Text: "CSV", Value: "1"},
 			}).
-			FieldOnChooseHide("0", "csv").
+			FieldOnChooseHide("1", "json").
 			FieldOnChooseShow("0", "json").
 			FieldOnChooseShow("1", "csv").
-			FieldDefault("0").
+			FieldDefault("1").
 			FieldDivider("Source Settings")
 
 		formList.AddField("JSON", "json", db.Int, form.TextArea).
-			FieldDefault(`
-[
-	{
-		"subject_id": 1000,
-		"teacher_id": 1000,
-		"class_id": 1047,
-		"weekly_session": 5,
-		"preferred_days": "1,2,3,4"
-	},
-	{
-		"subject_id": 1000,
-		"teacher_id": 1001,
-		"class_id": 1047,
-		"weekly_session": 5,
-		"preferred_days": "1,2,3,4"
-	}
-]	
-		`).
-			FieldHelpMsg(`采用json格式: {"day":[{"start_time": time, "end_time": time}]}`)
+			FieldDefault(printSampleReqJSON()).
+			FieldHelpMsg(`采用json格式: 参考默认值`)
 		formList.AddField("CSV", "csv", db.Int, form.File).
-			FieldOptions(types.FieldOptions{}).
-			FieldMust()
+			FieldOptionExt(map[string]interface{}{
+				"allowClear": true,
+			})
+
 		formList.AddField("Id", "id", db.Int8, form.Default).
 			FieldDisableWhenCreate().
 			FieldHide()
@@ -108,8 +92,11 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 			// values.Context is the *context.Context provided by GoAdmin
 			var reader provider.DataReader[dto.RequirementCreateRequest]
 			var filePath string
+			if values.Get("semester_id") == "" {
+				return errors.New("semester is not selected")
+			}
 			// when user chooses JSON
-			switch values.Get("sourceType") {
+			switch values.Get("source_type") {
 			case "0":
 				text := values.Get("json")
 				if text == "" {
@@ -119,11 +106,10 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 
 			// when user chooses File
 			case "1":
-				filePath := values.Get("csv")
+				filePath := "./uploads/" + values.Get("csv")
 				if filePath == "" {
 					return errors.New("no file uploaded")
 				}
-				reader = provider.NewCSVReader[dto.RequirementCreateRequest](filePath, false)
 				csvValidation := provider.FileValidationConfig{
 					AllowedExtensions: []string{".csv"},
 					MaxSizeBytes:      5 * 1024 * 1024, // 5 MB
@@ -132,14 +118,17 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 				if err := provider.ValidateFile(filePath, csvValidation); err != nil {
 					return err // GoAdmin shows this message to the user
 				}
+
+				reader = provider.NewCSVReader[dto.RequirementCreateRequest](filePath, false)
+
 			default:
 				return errors.New("unsupported source type")
 			}
 
 			// Always clean up the uploaded file when done
 			defer func() {
-				if filePath != "" {
-					if err := os.Remove(filePath); err != nil {
+				if values.Get("csv") != "" {
+					if err := os.Remove("./uploads/" + values.Get("csv")); err != nil {
 						log.Printf("cleanup failed for %s: %v", filePath, err)
 					}
 				}
@@ -147,9 +136,11 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 
 			// Start DB Process
 			var requirements []*models.Requirements
+			var errs []error
+
 			rows, err := reader.Read(ctx.Request.Context())
 			if err != nil {
-				return nil
+				return err
 			}
 			reqService := services.NewRequirementService(dbConn)
 			semID, err := strconv.ParseInt(values.Get("semester_id"), 10, 64)
@@ -161,21 +152,39 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 				return err
 			}
 			version := reqService.GetNewVersion(ctx.Request.Context(), semID)
-			for _, row := range rows {
-				// add school_id and semester_id to struct
+			for i, row := range rows {
+				// Validate struct
+				if err := validate.Struct(row); err != nil {
+					errs = append(errs, fmt.Errorf("row %d error: %v", i, err))
+				}
+				// reconstruct requirement struct
 				row.SchoolID = schID
 				row.SemesterID = semID
 				row.Version = version
+				row.TeacherID = row.Teacher.ID
+				row.SubjectID = row.Subject.ID
+				row.ClassID = row.Class.ID
 
 				r, err := row.ToModel()
 				if err != nil {
 					return err
 				}
-				fmt.Printf("requirement: %+v\n", r)
+
+				// Validate input data exists in database before inserting requirements
+				dbErrs := reqService.ValidateAssoc(ctx.Request.Context(), r)
+				errs = append(errs, dbErrs...)
+
 				requirements = append(requirements, r)
 			}
+			if len(errs) > 0 {
+				// TODO log errors or email errors
+				for _, e := range errs {
+					fmt.Printf("err: %s\n", e.Error())
+				}
+				return errors.New("check console for detail errors")
+			}
 
-			return reqService.CreateWithAssocInBatch(ctx.Request.Context(), requirements)
+			return reqService.SaveRequirements(ctx.Request.Context(), requirements)
 		})
 
 		formList.HideResetButton()

@@ -1,6 +1,9 @@
 package tables
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/GoAdminGroup/go-admin/context"
 	"github.com/GoAdminGroup/go-admin/modules/auth"
 	"github.com/GoAdminGroup/go-admin/modules/db"
@@ -19,27 +22,151 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 
 		user := auth.Auth(ctx)
 		userService := services.NewAdminUserService(dbConn)
-		// roomService := services.NewRoomService(dbConn)
-		// semService := services.NewSemesterService(dbConn)
+		semService := services.NewSemesterService(dbConn)
+		// subService := services.NewSubjectService(dbConn)
+		// tchService := services.NewTeacherService(dbConn)
+		// clsService := services.NewClassService(dbConn)
 		u, err := userService.GetUserSchoolID(ctx.Request.Context(), user.Id)
 		if err != nil {
 			panic(err)
 		}
+		semesters, err := semService.List(ctx.Request.Context(), u.SchoolID, 6)
+		if err != nil {
+			panic(err)
+		}
+		var semFilterOpts types.FieldOptions
+		for _, semester := range semesters {
+			semFilterOpts = append(semFilterOpts, types.FieldOption{
+				Value: fmt.Sprint(semester.ID),
+				Text: fmt.Sprintf("ID: %d - Year: %d - Semester: %d",
+					semester.ID, semester.Year, semester.Semester,
+				),
+			})
+		}
 		info := requirements.GetInfo()
 		if !user.IsSuperAdmin() {
-			info = info.Where("school_id", "=", u.SchoolID)
+			info = info.Where("requirements.school_id", "=", u.SchoolID)
 		}
 
 		info.AddField("Id", "id", db.Int8)
-		info.AddField("School_id", "school_id", db.Int8)
-		info.AddField("Semester_id", "semester_id", db.Int8)
+		if user.IsSuperAdmin() {
+			info.AddField("School_id", "school_id", db.Int8)
+		} else {
+			info.AddField("School_id", "school_id", db.Int8).FieldHide()
+		}
+		info.AddField("Semester", "semester_id", db.Int8).
+			FieldDisplay(func(model types.FieldModel) interface{} {
+				semID, err := strconv.ParseInt(model.Value, 10, 64)
+				if err != nil {
+					panic(err)
+				}
+				sem, err := semService.GetByID(ctx.Request.Context(), semID)
+				if err != nil {
+					panic(err)
+				}
+				return fmt.Sprintf("ID: %s - Year: %d - Semester: %d",
+					model.Value, sem.Year, sem.Semester,
+				)
+			}).
+			FieldFilterable(types.FilterType{
+				FormType: form.SelectSingle,
+				Width:    450,
+			}).
+			FieldFilterOptions(semFilterOpts)
+		// TODO add subject info
 		info.AddField("Subject_id", "subject_id", db.Int8)
+		info.AddField("SubjectName", "name", db.Varchar).
+			// Force the field to reference the JOINED table column
+			FieldJoin(types.Join{
+				BaseTable: "requirements", // The main table
+				Field:     "subject_id",   // The field in the main table
+				Table:     "subjects",     // The join table
+				JoinField: "id",           // The ID in the join table
+			}).
+			FieldFilterable(types.FilterType{
+				FormType: form.Text,
+				Operator: types.FilterOperatorLike,
+				Width:    450,
+			})
+
+		info.AddField("SubjectCode", "code", db.Varchar).
+			// Force the field to reference the JOINED table column
+			FieldJoin(types.Join{
+				BaseTable: "requirements", // The main table
+				Field:     "subject_id",   // The field in the main table
+				Table:     "subjects",     // The join table
+				JoinField: "id",           // The ID in the join table
+			}).
+			FieldFilterable(types.FilterType{
+				FormType: form.Text,
+				Operator: types.FilterOperatorLike,
+				Width:    450,
+			})
+		// TODO add teacher info
 		info.AddField("Teacher_id", "teacher_id", db.Int8)
+		info.AddField("Teacher FirstName", "first_name", db.Varchar).
+			// Force the field to reference the JOINED table column
+			FieldJoin(types.Join{
+				BaseTable: "requirements", // The main table
+				Field:     "teacher_id",   // The field in the main table
+				Table:     "teachers",     // The join table
+				JoinField: "id",           // The ID in the join table
+			}).
+			FieldFilterable(types.FilterType{
+				FormType: form.Text,
+				Operator: types.FilterOperatorLike,
+				Width:    450,
+			})
+		info.AddField("Teacher LastName", "last_name", db.Varchar).
+			// Force the field to reference the JOINED table column
+			FieldJoin(types.Join{
+				BaseTable: "requirements", // The main table
+				Field:     "teacher_id",   // The field in the main table
+				Table:     "teachers",     // The join table
+				JoinField: "id",           // The ID in the join table
+			}).
+			FieldFilterable(types.FilterType{
+				FormType: form.Text,
+				Operator: types.FilterOperatorLike,
+				Width:    450,
+			})
+		// TODO add class info
 		info.AddField("Class_id", "class_id", db.Int8)
+		info.AddField("ClassGrade", "grade", db.Varchar).
+			// Force the field to reference the JOINED table column
+			FieldJoin(types.Join{
+				BaseTable: "requirements", // The main table
+				Field:     "class_id",     // The field in the main table
+				Table:     "classes",      // The join table
+				JoinField: "id",           // The ID in the join table
+			}).
+			FieldFilterable(types.FilterType{
+				FormType: form.Text,
+				Operator: types.FilterOperatorEqual,
+				Width:    450,
+			})
+		info.AddField("ClassName", "class", db.Varchar).
+			// Force the field to reference the JOINED table column
+			FieldJoin(types.Join{
+				BaseTable: "requirements", // The main table
+				Field:     "class_id",     // The field in the main table
+				Table:     "classes",      // The join table
+				JoinField: "id",           // The ID in the join table
+			}).
+			FieldFilterable(types.FilterType{
+				FormType: form.Text,
+				Operator: types.FilterOperatorLike,
+				Width:    450,
+			})
 		info.AddField("Weekly_sessions", "weekly_sessions", db.Int4)
 		info.AddField("Min_day_gap", "min_day_gap", db.Int4)
 		info.AddField("Preferred_days", "preferred_days", db.Varchar)
-		info.AddField("Version", "version", db.Varchar)
+		info.AddField("Version", "version", db.Varchar).
+			FieldFilterable(types.FilterType{
+				FormType: form.Text,
+				Operator: types.FilterOperatorEqual,
+				Width:    450,
+			})
 		// Buttons
 		info.AddButton(ctx, "Bulk Requirements Create", icon.Tv,
 			action.PopUpWithIframe(

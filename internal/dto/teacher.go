@@ -7,13 +7,13 @@ import (
 
 type TeacherBase struct {
 	// School context is usually required for every teacher
-	SchoolID int64 `form:"school_id" csv:"school_id" json:"school_id" validate:"required,gt=0"`
+	SchoolID int64 `form:"school_id" csv:"school_id" json:"school_id" validate:"-"`
 
 	// Employee ID: Must be unique, so we ensure it's provided and positive
-	EmployeeID int64 `form:"employee_id" csv:"employee_id" json:"employee_id" validate:"required,gt=0"`
+	EmployeeID int64 `form:"employee_id" csv:"employee_id" json:"employee_id" validate:"omitempty"`
 
-	FirstName string `form:"first_name" csv:"first_name" json:"first_name" validate:"omitempty,min=2,max=100"`
-	LastName  string `form:"last_name" csv:"last_name" json:"last_name" validate:"omitempty,min=2,max=100"`
+	FirstName string `form:"first_name" csv:"first_name" json:"first_name" validate:"required,min=2,max=100"`
+	LastName  string `form:"last_name" csv:"last_name" json:"last_name" validate:"required,min=2,max=100"`
 
 	// Email is optional in your model (*string), but often required in business logic
 	Email string `form:"email" csv:"email" json:"email" validate:"omitempty,email"`
@@ -41,7 +41,7 @@ type TeacherCreateRequest struct {
 }
 
 type TeacherUpdateRequest struct {
-	ID int64 `form:"id" validate:"required"` // The ID is mandatory
+	ID int64 `form:"id" json:"id" csv:"id" validate:"required"` // The ID is mandatory
 	TeacherBase
 }
 
@@ -51,7 +51,6 @@ type TeacherStatusUpdateRequest struct {
 }
 
 func (req *TeacherBase) toModel() (*models.Teachers, error) {
-
 	return &models.Teachers{
 		SchoolID:         req.SchoolID,
 		EmployeeID:       req.EmployeeID,

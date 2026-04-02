@@ -109,3 +109,52 @@ func printDualListBoxJS(sourceField, targetField, url string, params ...map[stri
 
 	return template.HTML(js)
 }
+
+func printSampleReqJSON() string {
+	return `
+[
+	{
+		"subject": {
+			"id": 1000,
+			"name": "math",
+			"is_heavy": true,
+			"requires_lab": false
+		},
+		"teacher": {
+			"id": 1000,
+			"first_name": "Jone",
+			"last_name": "Doe"
+		},
+		"class": {
+			"id":1047,
+			"grade": 1,
+			"class": "1"
+		},
+		"weekly_sessions": 5,
+		"min_day_gap": 0,
+		"preferred_days": "1,2,3,4"
+	},
+	{
+		"subject": {
+			"id": 1001,
+			"name": "chinese",
+			"is_heavy": true,
+			"requires_lab": false
+		},
+		"teacher": {
+			"id": 1000,
+			"first_name": "Frank",
+			"last_name": "Joe"
+		},
+		"class": {
+			"id":1048,
+			"grade": 1,
+			"class": "2"
+		},
+		"weekly_sessions": 5,
+		"min_day_gap": 0,
+		"preferred_days": "1,2,3,4"
+	}
+]	
+		`
+}

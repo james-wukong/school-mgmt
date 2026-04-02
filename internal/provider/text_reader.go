@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -21,18 +22,19 @@ func NewTextReader[T any](data string) *TextReader[T] {
 	}
 }
 
-func (r *TextReader[T]) Read(_ context.Context) ([]*T, error) {
+func (r *TextReader[T]) Read(context.Context) ([]*T, error) {
 	var results []*T
-	// Pass the address (&room) so the function can modify the variable
+	// Pass the address so the function can modify the variable
 	err := json.Unmarshal([]byte(r.data), &results)
 	if err != nil {
+		fmt.Printf("error is %+v\n", err)
 		return nil, err
 	}
 
 	return results, nil
 }
 
-// UnmarshalJSON handles the "09:00" -> HourMinute conversion
+// UnmarshalJSON handles the "2006-01-02" -> Date conversion
 // When json.Unmarshal encounters a field of type HourMinute,
 // it checks if that type has an UnmarshalJSON([]byte) error method
 func (d *TextDate) UnmarshalJSON(b []byte) error {

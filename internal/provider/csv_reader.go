@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/jszwec/csvutil"
+	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/transform"
 )
 
 type CSVReader[T any] struct {
@@ -37,7 +39,18 @@ func (r *CSVReader[T]) Read(_ context.Context) ([]*T, error) {
 			panic(err)
 		}
 	}()
-	csvReader := csv.NewReader(f)
+	// 1. Define the BOM-aware decoder
+	// unicode.BOMOverride ensures that if a BOM is found, it's used to
+	// determine the encoding and then stripped.
+	win1252ToUTF8 := unicode.UTF8.NewDecoder()
+
+	// 2. Wrap the file reader
+	// This "cleanReader" will now provide a stream without the leading BOM bytes.
+	cleanReader := transform.NewReader(f, unicode.BOMOverride(win1252ToUTF8))
+
+	// 3. Use csvutil with the cleaned reader
+	// We use a standard csv.Reader as the source for csvutil
+	csvReader := csv.NewReader(cleanReader)
 
 	// if the header doesn't exists
 	args := []string{}

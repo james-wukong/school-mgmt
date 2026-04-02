@@ -12,8 +12,7 @@ import (
 
 type RequirementRepository interface {
 	CreateWithAssoc(ctx context.Context, t *models.Requirements) error
-	CreateWithAssocInBatch(ctx context.Context, t []*models.Requirements) error
-	Update(ctx context.Context, t *models.Requirements) error
+	SaveInBatch(ctx context.Context, t []*models.Requirements) error
 	GetByID(ctx context.Context, id int64) (*models.Requirements, error)
 	UpdateWithAssoc(ctx context.Context, t *models.Requirements) error
 	Delete(ctx context.Context, t *models.Requirements) error
@@ -38,49 +37,40 @@ func (r *requirementsRepo) CreateWithAssoc(ctx context.Context, t *models.Requir
 	// 2. Updates Requirements if conflict occurs
 	// 3. Inserts/updates associated records
 	// 4. Updates join table (many2many) entries if there is any
-	return r.db.WithContext(ctx).
-		Session(&gorm.Session{
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return tx.Session(&gorm.Session{
 			FullSaveAssociations: true,
 		}).Clauses(clause.OnConflict{
-		Columns: []clause.Column{
-			{Name: "school_id"},
-			{Name: "semester_id"},
-			{Name: "subject_id"},
-			{Name: "teacher_id"},
-			{Name: "class_id"},
-		}, // or unique key
-		UpdateAll: true,
-	}).Create(t).
-		Error
+			Columns: []clause.Column{
+				{Name: "school_id"},
+				{Name: "semester_id"},
+				{Name: "subject_id"},
+				{Name: "teacher_id"},
+				{Name: "class_id"},
+				{Name: "version"},
+			}, // or unique key
+			UpdateAll: true,
+		}).Create(t).
+			Error
+	})
 }
 
-func (r *requirementsRepo) CreateWithAssocInBatch(
-	ctx context.Context, t []*models.Requirements,
-) error {
-	// 1. Inserts Requirements if not exists
-	// 2. Updates Requirements if conflict occurs
-	// 3. Inserts/updates associated records
-	// 4. Updates join table (many2many) entries if there is any
-	return r.db.WithContext(ctx).
-		Omit("Subject").
-		Session(&gorm.Session{
-			CreateBatchSize:      100,
-			FullSaveAssociations: true,
-		}).Clauses(clause.OnConflict{
-		Columns: []clause.Column{
-			{Name: "semester_id"},
-			{Name: "subject_id"},
-			{Name: "teacher_id"},
-			{Name: "class_id"},
-			{Name: "version"},
-		}, // or unique key
-		UpdateAll: true,
-	}).Create(t).
-		Error
-}
-
-func (r *requirementsRepo) Update(ctx context.Context, t *models.Requirements) error {
-	return r.db.WithContext(ctx).Save(t).Error
+func (r *requirementsRepo) SaveInBatch(ctx context.Context, t []*models.Requirements) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return tx.
+			Omit(clause.Associations).
+			Clauses(clause.OnConflict{
+				Columns: []clause.Column{
+					{Name: "semester_id"},
+					{Name: "subject_id"},
+					{Name: "teacher_id"},
+					{Name: "class_id"},
+					{Name: "version"},
+				}, // or unique key
+				UpdateAll: true,
+			}).CreateInBatches(t, 100).
+			Error
+	})
 }
 
 func (r *requirementsRepo) GetByID(ctx context.Context, id int64) (*models.Requirements, error) {

@@ -27,6 +27,7 @@ type TeacherRepository interface {
 		semID int64,
 	) error
 	ReplaceWithSubjectAssoc(ctx context.Context, t *models.Teachers) error
+	ExistByModel(ctx context.Context, t *models.Teachers) bool
 }
 
 type teacherRepo struct {
@@ -183,4 +184,16 @@ func (r *teacherRepo) ReplaceWithSubjectAssoc(ctx context.Context, t *models.Tea
 			Association("Subjects").
 			Replace(t.Subjects)
 	})
+}
+
+func (r *teacherRepo) ExistByModel(ctx context.Context, t *models.Teachers) bool {
+	var exists bool
+	r.db.WithContext(ctx).
+		Model(&models.Teachers{}).
+		Select("count(*) > 0").
+		Where(t).
+		Limit(1).
+		Find(&exists)
+
+	return exists
 }
