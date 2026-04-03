@@ -22,6 +22,10 @@ func (s *SubjectService) CreateSubject(ctx context.Context, t *models.Subjects) 
 	return s.repo.Create(ctx, t)
 }
 
+func (s *SubjectService) FilterAndCreateInBatches(ctx context.Context, t []*models.Subjects) error {
+	return s.repo.FilterAndCreateInBatches(ctx, t)
+}
+
 func (s *SubjectService) GetByID(ctx context.Context, subjectID int64) (*models.Subjects, error) {
 	return s.repo.GetByID(ctx, subjectID)
 }

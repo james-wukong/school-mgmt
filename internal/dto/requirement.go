@@ -26,10 +26,10 @@ type RequirementCreateRequest struct {
 	RequirementBase
 
 	// relationships
-	Semester SemesterUpdateRequest `csv:"semester_assoc_,inline" json:"-" validate:"-"`
-	Subject  SubjectUpdateRequest  `csv:"subject_assoc_,inline" json:"subject" validate:"required,omitempty"`
-	Teacher  TeacherUpdateRequest  `csv:"teacher_assoc_,inline" json:"teacher" validate:"required,omitempty"`
-	Class    ClassUpdateRequest    `csv:"class_assoc_,inline" json:"class" validate:"required,omitempty"`
+	Semester SemesterUpdateRequest   `csv:"semester_assoc_,inline" json:"-" validate:"-"`
+	Subject  ReqSubjectUpdateRequest `csv:"subject_assoc_,inline" json:"subject" validate:"required,omitempty"`
+	Teacher  TeacherUpdateRequest    `csv:"teacher_assoc_,inline" json:"teacher" validate:"required,omitempty"`
+	Class    ClassUpdateRequest      `csv:"class_assoc_,inline" json:"class" validate:"required,omitempty"`
 }
 
 type RequirementUpdateRequest struct {

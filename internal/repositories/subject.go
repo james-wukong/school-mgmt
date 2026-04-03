@@ -3,6 +3,7 @@ package repositories
 
 import (
 	"context"
+	"strings"
 
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	"gorm.io/gorm"
@@ -10,6 +11,7 @@ import (
 
 type SubjectRepository interface {
 	Create(ctx context.Context, t *models.Subjects) error
+	FilterAndCreateInBatches(ctx context.Context, t []*models.Subjects) error
 	Update(ctx context.Context, t *models.Subjects) error
 	Delete(ctx context.Context, t *models.Subjects) error
 	GetByID(ctx context.Context, id int64) (*models.Subjects, error)
@@ -30,6 +32,44 @@ func NewSubjectRepository(db *gorm.DB) SubjectRepository {
 // Create saves all relational tables
 func (r *subjectRepo) Create(ctx context.Context, t *models.Subjects) error {
 	return r.db.WithContext(ctx).Create(t).Error
+}
+
+func (r *subjectRepo) FilterAndCreateInBatches(
+	ctx context.Context, t []*models.Subjects,
+) error {
+	// 1. Fetch all existing names and codes in two queries (or one combined)
+	var existingNames, existingCodes []string
+	r.db.WithContext(ctx).Model(&models.Subjects{}).Pluck("name", &existingNames)
+	r.db.WithContext(ctx).Model(&models.Subjects{}).Pluck("code", &existingCodes)
+
+	// 2. Convert to maps for O(1) lookup
+	nameMap := make(map[string]bool)
+	for _, n := range existingNames {
+		nameMap[strings.ToLower(n)] = true
+	}
+
+	codeMap := make(map[string]bool)
+	for _, c := range existingCodes {
+		codeMap[strings.ToLower(c)] = true
+	}
+
+	// 3. Filter the batch
+	var finalBatch []*models.Subjects
+	for _, s := range t {
+		if !nameMap[strings.ToLower(s.Name)] && !codeMap[strings.ToLower(s.Code)] {
+			finalBatch = append(finalBatch, s)
+			// Add to maps to prevent duplicates within the SAME batch
+			nameMap[strings.ToLower(s.Name)] = true
+			codeMap[strings.ToLower(s.Code)] = true
+		}
+	}
+
+	// 4. Perform a clean batch insert
+	if len(finalBatch) > 0 {
+		return r.db.WithContext(ctx).CreateInBatches(finalBatch, 100).Error
+	}
+
+	return nil
 }
 
 // Update will only update classes table

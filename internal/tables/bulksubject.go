@@ -24,41 +24,17 @@ import (
 	form2 "github.com/GoAdminGroup/go-admin/plugins/admin/modules/form"
 )
 
-func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
+func GetBulkSubjectsTable(dbConn *gorm.DB) table.Generator {
 	return func(ctx *context.Context) table.Table {
-		requirements := table.NewDefaultTable(ctx, table.DefaultConfigWithDriver("postgresql"))
+		subjects := table.NewDefaultTable(ctx, table.DefaultConfigWithDriver("postgresql"))
 		user := auth.Auth(ctx)
 		userService := services.NewAdminUserService(dbConn)
-		semService := services.NewSemesterService(dbConn)
 		u, err := userService.GetUserSchoolID(ctx.Request.Context(), user.Id)
 		if err != nil {
 			panic(err)
 		}
 
-		formList := requirements.GetForm()
-		formList.AddField("Semester_id", "semester_id", db.Int8, form.SelectSingle).
-			FieldOptionInitFn(func(types.FieldModel) types.FieldOptions {
-				var c types.FieldOptions
-				s, err := semService.List(ctx.Request.Context(), u.SchoolID, 6)
-				if err != nil || len(s) == 0 {
-					return nil
-				}
-				for _, v := range s {
-					opt := types.FieldOption{
-						Text: fmt.Sprintf(
-							"ID: %d, Year: %d, Semester: %d",
-							v.ID, v.Year, v.Semester,
-						),
-						Value: fmt.Sprint(v.ID),
-					}
-					c = append(c, opt)
-				}
-				c[len(c)-1].Selected = true
-
-				return c
-			}).
-			FieldMust().
-			FieldDivider("Semester Settings")
+		formList := subjects.GetForm()
 
 		formList.AddField("Choose Source Type", "source_type", db.Tinyint, form.SelectSingle).
 			FieldOptions(types.FieldOptions{
@@ -72,7 +48,7 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 			FieldDivider("Source Settings")
 
 		formList.AddField("JSON", "json", db.Int, form.TextArea).
-			FieldDefault(printSampleReqJSON()).
+			FieldDefault(printSampleSubjectJSON()).
 			FieldHelpMsg(`采用json格式: 参考默认值`)
 		formList.AddField("CSV", "csv", db.Int, form.File).
 			FieldOptionExt(map[string]interface{}{
@@ -91,11 +67,9 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 			// values 为传入的表单参数
 			// 1. Get the request object from the context
 			// values.Context is the *context.Context provided by GoAdmin
-			var reader provider.DataReader[dto.RequirementCreateRequest]
+			var reader provider.DataReader[dto.SubjectCreateRequest]
 			var filePath string
-			if values.Get("semester_id") == "" {
-				return errors.New("semester is not selected")
-			}
+
 			// when user chooses JSON
 			switch values.Get("source_type") {
 			case "0":
@@ -103,7 +77,7 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 				if text == "" {
 					return errors.New("empty json")
 				}
-				reader = provider.NewTextReader[dto.RequirementCreateRequest](text)
+				reader = provider.NewTextReader[dto.SubjectCreateRequest](text)
 
 			// when user chooses File
 			case "1":
@@ -120,7 +94,7 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 					return err // GoAdmin shows this message to the user
 				}
 
-				reader = provider.NewCSVReader[dto.RequirementCreateRequest](filePath, false)
+				reader = provider.NewCSVReader[dto.SubjectCreateRequest](filePath, false)
 
 			default:
 				return errors.New("unsupported source type")
@@ -136,23 +110,20 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 			}()
 
 			// Start DB Process
-			var requirements []*models.Requirements
+			var subs []*models.Subjects
 			var errs []error
 
 			rows, err := reader.Read(ctx.Request.Context())
 			if err != nil {
 				return err
 			}
-			reqService := services.NewRequirementService(dbConn)
-			semID, err := strconv.ParseInt(values.Get("semester_id"), 10, 64)
-			if err != nil {
-				return err
-			}
+			subService := services.NewSubjectService(dbConn)
+
 			schID, err := strconv.ParseInt(values.Get("school_id"), 10, 64)
 			if err != nil {
 				return err
 			}
-			version := reqService.GetNewVersion(ctx.Request.Context(), semID)
+
 			for i, row := range rows {
 				// Validate struct
 				if err := formutils.Validate.Struct(row); err != nil {
@@ -160,22 +131,12 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 				}
 				// reconstruct requirement struct
 				row.SchoolID = schID
-				row.SemesterID = semID
-				row.Version = version
-				row.TeacherID = row.Teacher.ID
-				row.SubjectID = row.Subject.ID
-				row.ClassID = row.Class.ID
 
 				r, err := row.ToModel()
 				if err != nil {
 					return err
 				}
-
-				// Validate input data exists in database before inserting requirements
-				dbErrs := reqService.ValidateAssoc(ctx.Request.Context(), r)
-				errs = append(errs, dbErrs...)
-
-				requirements = append(requirements, r)
+				subs = append(subs, r)
 			}
 			if len(errs) > 0 {
 				// TODO log errors or email errors
@@ -185,13 +146,13 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 				return errors.New("check console for detail errors")
 			}
 
-			return reqService.SaveRequirements(ctx.Request.Context(), requirements)
+			return subService.FilterAndCreateInBatches(ctx.Request.Context(), subs)
 		})
 
 		formList.HideContinueNewCheckBox()
 		formList.HideResetButton()
 		formList.SetTable("requirements").SetTitle("Requirements").SetDescription("Requirements")
 
-		return requirements
+		return subjects
 	}
 }

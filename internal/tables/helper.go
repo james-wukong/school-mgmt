@@ -3,34 +3,7 @@ package tables
 import (
 	"fmt"
 	"html/template"
-
-	"github.com/go-playground/form/v4"
-	"github.com/go-playground/validator/v10"
 )
-
-// Global instances for performance (thread-safe)
-var (
-	decoder  = form.NewDecoder()
-	validate = validator.New()
-)
-
-// MapAndValidate decodes GoAdmin values and runs struct-tag validation
-func MapAndValidate[T any](values map[string][]string) (*T, error) {
-	// fmt.Printf("DEBUG: values map content: %#v\n", values)
-	var result T
-
-	// 1. Decode map[string][]string into the struct
-	if err := decoder.Decode(&result, values); err != nil {
-		return nil, err
-	}
-
-	// 2. Validate the struct based on 'validate' tags
-	if err := validate.Struct(&result); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
 
 func printDualListBoxJS(sourceField, targetField, url string, params ...map[string]any) template.HTML {
 	var q string
@@ -56,9 +29,9 @@ func printDualListBoxJS(sourceField, targetField, url string, params ...map[stri
 		var id = $('[name="id"]').val() || 0;
 		if (!value) {
 			$targetField.empty().bootstrapDualListbox('refresh');
-			return; 
+			return;
 		}
-			
+
 		$.ajax({
 			url: '%s?id=' + id + '&value=' + value + '&%s',
 			type: 'POST',
@@ -98,7 +71,7 @@ func printDualListBoxJS(sourceField, targetField, url string, params ...map[stri
 
 		// Mark as initialized
 		$sourceField.data('init-dual-box', true);
-		
+
 		// Trigger initial load
 		var initialValue = $sourceField.val();
 		if (initialValue) {
@@ -155,6 +128,80 @@ func printSampleReqJSON() string {
 		"min_day_gap": 0,
 		"preferred_days": "1,2,3,4"
 	}
-]	
-		`
+]
+`
+}
+
+func printSampleSubjectJSON() string {
+	return `
+[
+	{
+		"name": "mathematics",
+		"code": "math",
+		"description": "this is math subject example descripton",
+		"is_heavy": true,
+		"requires_lab": false
+	},
+	{
+		"name": "science",
+		"code": "sci",
+		"description": "this is math subject example descripton....",
+		"is_heavy": true,
+		"requires_lab": true
+	},
+	{
+		"name": "music",
+		"code": "mus",
+		"description": "this is math subject example descripton....",
+		"is_heavy": false,
+		"requires_lab": false
+	}
+]
+`
+}
+
+func printSampleTimeslotsJSON() string {
+	return `
+{
+  "Monday": [
+    {"start_time": "09:00", "end_time": "09:45"},
+    {"start_time": "10:00", "end_time": "10:45"},
+    {"start_time": "11:00", "end_time": "11:45"},
+    {"start_time": "13:00", "end_time": "13:45"},
+    {"start_time": "14:00", "end_time": "14:45"},
+    {"start_time": "15:00", "end_time": "15:45"}
+  ],
+  "Tuesday": [
+    {"start_time": "09:00", "end_time": "09:45"},
+    {"start_time": "10:00", "end_time": "10:45"},
+    {"start_time": "11:00", "end_time": "11:45"},
+    {"start_time": "13:00", "end_time": "13:45"},
+    {"start_time": "14:00", "end_time": "14:45"},
+    {"start_time": "15:00", "end_time": "15:45"}
+  ],
+  "Wednesday": [
+    {"start_time": "09:00", "end_time": "09:45"},
+    {"start_time": "10:00", "end_time": "10:45"},
+    {"start_time": "11:00", "end_time": "11:45"},
+    {"start_time": "13:00", "end_time": "13:45"},
+    {"start_time": "14:00", "end_time": "14:45"},
+    {"start_time": "15:00", "end_time": "15:45"}
+  ],
+  "Thursday": [
+    {"start_time": "09:00", "end_time": "09:45"},
+    {"start_time": "10:00", "end_time": "10:45"},
+    {"start_time": "11:00", "end_time": "11:45"},
+    {"start_time": "13:00", "end_time": "13:45"},
+    {"start_time": "14:00", "end_time": "14:45"},
+    {"start_time": "15:00", "end_time": "15:45"}
+  ],
+  "Friday": [
+    {"start_time": "09:00", "end_time": "09:45"},
+    {"start_time": "10:00", "end_time": "10:45"},
+    {"start_time": "11:00", "end_time": "11:45"},
+    {"start_time": "13:00", "end_time": "13:45"},
+    {"start_time": "14:00", "end_time": "14:45"},
+    {"start_time": "15:00", "end_time": "15:45"}
+  ]
+`
 }

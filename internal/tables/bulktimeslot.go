@@ -61,50 +61,7 @@ func GetBulkTimeslotsTable(dbConn *gorm.DB) table.Generator {
 			FieldDisableWhenCreate().
 			FieldHide()
 		formList.AddField("Timeslots", "timeslots", db.Int4, form.TextArea).
-			FieldDefault(`
-{
-  "Monday": [
-    {"start_time": "09:00", "end_time": "09:45"},
-    {"start_time": "10:00", "end_time": "10:45"},
-    {"start_time": "11:00", "end_time": "11:45"},
-    {"start_time": "13:00", "end_time": "13:45"},
-    {"start_time": "14:00", "end_time": "14:45"},
-    {"start_time": "15:00", "end_time": "15:45"}
-  ],
-  "Tuesday": [
-    {"start_time": "09:00", "end_time": "09:45"},
-    {"start_time": "10:00", "end_time": "10:45"},
-    {"start_time": "11:00", "end_time": "11:45"},
-    {"start_time": "13:00", "end_time": "13:45"},
-    {"start_time": "14:00", "end_time": "14:45"},
-    {"start_time": "15:00", "end_time": "15:45"}
-  ],
-  "Wednesday": [
-    {"start_time": "09:00", "end_time": "09:45"},
-    {"start_time": "10:00", "end_time": "10:45"},
-    {"start_time": "11:00", "end_time": "11:45"},
-    {"start_time": "13:00", "end_time": "13:45"},
-    {"start_time": "14:00", "end_time": "14:45"},
-    {"start_time": "15:00", "end_time": "15:45"}
-  ],
-  "Thursday": [
-    {"start_time": "09:00", "end_time": "09:45"},
-    {"start_time": "10:00", "end_time": "10:45"},
-    {"start_time": "11:00", "end_time": "11:45"},
-    {"start_time": "13:00", "end_time": "13:45"},
-    {"start_time": "14:00", "end_time": "14:45"},
-    {"start_time": "15:00", "end_time": "15:45"}
-  ],
-  "Friday": [
-    {"start_time": "09:00", "end_time": "09:45"},
-    {"start_time": "10:00", "end_time": "10:45"},
-    {"start_time": "11:00", "end_time": "11:45"},
-    {"start_time": "13:00", "end_time": "13:45"},
-    {"start_time": "14:00", "end_time": "14:45"},
-    {"start_time": "15:00", "end_time": "15:45"}
-  ]
-}
-`).
+			FieldDefault(printSampleTimeslotsJSON()).
 			FieldMust().
 			FieldHelpMsg(`采用json格式: {"day":[{"start_time": time, "end_time": time}]}`).
 			FieldDivider("Timeslot Settings")
@@ -146,6 +103,7 @@ func GetBulkTimeslotsTable(dbConn *gorm.DB) table.Generator {
 			return err
 		})
 
+		formList.HideContinueNewCheckBox()
 		formList.HideResetButton()
 		formList.SetTable("timeslots").SetTitle("Timeslots").SetDescription("Timeslots")
 

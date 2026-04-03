@@ -48,15 +48,18 @@ var Generators = map[string]table.Generator{
 func GetGenerators(db *gorm.DB) table.GeneratorList {
 	return table.GeneratorList{
 		"bulkclasses":      GetBulkClassesTable(db),
-		"bulktimeslots":    GetBulkTimeslotsTable(db),
 		"bulkrequirements": GetBulkRequirementsTable(db),
-		"classes":          GetClassesTable(db),
-		"rooms":            GetRoomsTable(db),
-		"requirements":     GetRequirementsTable(db),
-		"semesters":        GetSemestersTable(db),
-		"subjects":         GetSubjectsTable(db),
-		"teachers":         GetTeachersTable(db),
-		"timeslots":        GetTimeslotsTable(db),
+		"bulksubjects":     GetBulkSubjectsTable(db),
+		"bulktimeslots":    GetBulkTimeslotsTable(db),
+		"bulkteachers":     GetBulkTeachersTable(db),
+
+		"classes":      GetClassesTable(db),
+		"rooms":        GetRoomsTable(db),
+		"requirements": GetRequirementsTable(db),
+		"semesters":    GetSemestersTable(db),
+		"subjects":     GetSubjectsTable(db),
+		"teachers":     GetTeachersTable(db),
+		"timeslots":    GetTimeslotsTable(db),
 		// Add more tables...
 	}
 }

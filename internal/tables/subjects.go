@@ -5,7 +5,9 @@ import (
 	"github.com/GoAdminGroup/go-admin/modules/auth"
 	"github.com/GoAdminGroup/go-admin/modules/db"
 	"github.com/GoAdminGroup/go-admin/plugins/admin/modules/table"
+	"github.com/GoAdminGroup/go-admin/template/icon"
 	"github.com/GoAdminGroup/go-admin/template/types"
+	"github.com/GoAdminGroup/go-admin/template/types/action"
 	"github.com/GoAdminGroup/go-admin/template/types/form"
 	table2 "github.com/GoAdminGroup/go-admin/template/types/table"
 	"github.com/james-wukong/online-school-mgmt/internal/services"
@@ -47,6 +49,19 @@ func GetSubjectsTable(dbConn *gorm.DB) table.Generator {
 			})
 		info.AddField("Description", "description", db.Text)
 
+		// Buttons
+		info.AddButton(ctx, "Bulk Subjects Create", icon.Tv,
+			action.PopUpWithIframe(
+				"/subject/bulk/iframe",
+				"Iframe Subjects",
+				action.IframeData{
+					Src: "/admin/info/bulksubjects/new",
+				},
+				"900px",
+				"600px",
+			))
+
+		info.SetPageSizeList([]int{20, 40, 80, 120}).SetDefaultPageSize(20)
 		info.SetTable("subjects").SetTitle("Subjects").SetDescription("Subjects")
 
 		formList := subjects.GetForm()

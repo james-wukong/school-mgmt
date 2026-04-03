@@ -12,13 +12,16 @@ import (
 	"github.com/GoAdminGroup/go-admin/modules/db"
 	form2 "github.com/GoAdminGroup/go-admin/plugins/admin/modules/form"
 	"github.com/GoAdminGroup/go-admin/plugins/admin/modules/table"
+	"github.com/GoAdminGroup/go-admin/template/icon"
 	"github.com/GoAdminGroup/go-admin/template/types"
+	"github.com/GoAdminGroup/go-admin/template/types/action"
 	"github.com/GoAdminGroup/go-admin/template/types/form"
 	table2 "github.com/GoAdminGroup/go-admin/template/types/table"
 	"github.com/go-playground/validator/v10"
 	"github.com/james-wukong/online-school-mgmt/internal/dto"
 	model2 "github.com/james-wukong/online-school-mgmt/internal/models"
 	"github.com/james-wukong/online-school-mgmt/internal/services"
+	formutils "github.com/james-wukong/online-school-mgmt/internal/utils/form"
 	"gorm.io/gorm"
 )
 
@@ -30,7 +33,6 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 		teacherService := services.NewTeacherService(dbConn)
 		subService := services.NewSubjectService(dbConn)
 		semService := services.NewSemesterService(dbConn)
-		// slotService := services.NewTimeslotService(dbConn)
 
 		u, err := userService.GetUserSchoolID(ctx.Request.Context(), user.Id)
 		if err != nil {
@@ -61,6 +63,17 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 		info.AddField("Hire_date", "hire_date", db.Date)
 		info.AddField("Created_at", "created_at", db.Timestamptz)
 		info.AddField("Updated_at", "updated_at", db.Timestamptz)
+		// Buttons
+		info.AddButton(ctx, "Bulk Teachers Create", icon.Tv,
+			action.PopUpWithIframe(
+				"/teacher/bulk/iframe",
+				"Iframe Teachers",
+				action.IframeData{
+					Src: "/admin/info/bulkteachers/new",
+				},
+				"900px",
+				"600px",
+			))
 
 		info.SetTable("teachers").SetTitle("Teachers").SetDescription("Teachers")
 
@@ -180,7 +193,7 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 		// 取代新增函数
 		formList.SetInsertFn(func(values form2.Values) error {
 			// Map values to TeacherRequest struct and validate
-			req, err := MapAndValidate[dto.TeacherCreateRequest](values)
+			req, err := formutils.MapAndValidate[dto.TeacherCreateRequest](values)
 			if err != nil {
 				// Check if it's a validation error specifically
 				if ve, ok := err.(validator.ValidationErrors); ok {
@@ -193,22 +206,27 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 			}
 
 			teacher, err := req.ToModel()
+
 			if err != nil {
 				return err
 			}
 			var ts []*model2.TeacherSubjects
-			for _, subID := range req.SubjectIDs {
-				ts = append(ts, &model2.TeacherSubjects{
-					TeacherID: teacher.ID,
-					SubjectID: subID,
-				})
+			if len(req.SubjectIDs) > 0 {
+				for _, subID := range req.SubjectIDs {
+					ts = append(ts, &model2.TeacherSubjects{
+						TeacherID: teacher.ID,
+						SubjectID: subID,
+					})
+				}
 			}
 			var tt []*model2.TeacherTimeslots
-			for _, slotID := range req.TimeslotIDs {
-				tt = append(tt, &model2.TeacherTimeslots{
-					TeacherID:  teacher.ID,
-					TimeslotID: slotID,
-				})
+			if len(req.TimeslotIDs) > 0 {
+				for _, slotID := range req.TimeslotIDs {
+					tt = append(tt, &model2.TeacherTimeslots{
+						TeacherID:  teacher.ID,
+						TimeslotID: slotID,
+					})
+				}
 			}
 			if err := teacherService.CreateWithAssoc(
 				ctx.Request.Context(), teacher, ts, tt); err != nil {
@@ -228,7 +246,7 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 
 			// 2. Handle Single Update (The Switch Toggle)
 			if len(values) == 2 && values.Has("is_active") {
-				req, err := MapAndValidate[dto.TeacherStatusUpdateRequest](values)
+				req, err := formutils.MapAndValidate[dto.TeacherStatusUpdateRequest](values)
 				if err != nil {
 					// Check if it's a validation error specifically
 					if ve, ok := err.(validator.ValidationErrors); ok {
@@ -245,7 +263,7 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 			// 3. Handle Full Update
 			var ts []*model2.TeacherSubjects
 			var tt []*model2.TeacherTimeslots
-			req, err := MapAndValidate[dto.TeacherUpdateRequest](values)
+			req, err := formutils.MapAndValidate[dto.TeacherUpdateRequest](values)
 			if err != nil {
 				// Check if it's a validation error specifically
 				if ve, ok := err.(validator.ValidationErrors); ok {
@@ -256,26 +274,38 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 				}
 				return err
 			}
+
+			fmt.Printf("IsZero: %v\n", time.Time(req.HireDate).IsZero())
+			fmt.Printf("hir_date: %s\n", values.Get("hire_date"))
+			fmt.Printf("req: %+v\n", req)
 			teacher, err := req.ToModel()
+			fmt.Printf("teacher: %+v\n", teacher.HireDate)
 			if err != nil {
 				return err
 			}
-			for _, subID := range req.SubjectIDs {
-				ts = append(ts, &model2.TeacherSubjects{
-					TeacherID: teacher.ID,
-					SubjectID: subID,
-				})
+			if len(req.SubjectIDs) > 0 {
+				for _, subID := range req.SubjectIDs {
+					ts = append(ts, &model2.TeacherSubjects{
+						TeacherID: teacher.ID,
+						SubjectID: subID,
+					})
+				}
 			}
-			for _, slotID := range req.TimeslotIDs {
-				tt = append(tt, &model2.TeacherTimeslots{
-					TeacherID:  teacher.ID,
-					TimeslotID: slotID,
-				})
+			if len(req.TimeslotIDs) > 0 {
+				for _, slotID := range req.TimeslotIDs {
+					tt = append(tt, &model2.TeacherTimeslots{
+						TeacherID:  teacher.ID,
+						TimeslotID: slotID,
+					})
+				}
 			}
 			//
-			semID, err := strconv.ParseInt(values.Get("semester_id"), 10, 64)
-			if err != nil {
-				return err
+			var semID int64
+			if values.Get("semester_id") != "" {
+				semID, err = strconv.ParseInt(values.Get("semester_id"), 10, 64)
+				if err != nil {
+					return err
+				}
 			}
 			if err := teacherService.UpdateWithAssoc(
 				ctx.Request.Context(), teacher, ts, tt, semID); err != nil {

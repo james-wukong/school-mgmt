@@ -17,6 +17,7 @@ import (
 	"github.com/james-wukong/online-school-mgmt/internal/dto"
 	model2 "github.com/james-wukong/online-school-mgmt/internal/models"
 	"github.com/james-wukong/online-school-mgmt/internal/services"
+	formutils "github.com/james-wukong/online-school-mgmt/internal/utils/form"
 	"gorm.io/gorm"
 )
 
@@ -140,7 +141,7 @@ func GetRoomsTable(dbConn *gorm.DB) table.Generator {
 		// 取代新增函数
 		formList.SetInsertFn(func(values form2.Values) error {
 			// Map values to RoomRequest struct and validate
-			req, err := MapAndValidate[dto.RoomCreateRequest](values)
+			req, err := formutils.MapAndValidate[dto.RoomCreateRequest](values)
 			if err != nil {
 				// Check if it's a validation error specifically
 				if ve, ok := err.(validator.ValidationErrors); ok {
@@ -181,7 +182,7 @@ func GetRoomsTable(dbConn *gorm.DB) table.Generator {
 
 			// 2. Handle Single Update (The Switch Toggle)
 			if len(values) == 2 && values.Has("is_active") {
-				req, err := MapAndValidate[dto.RoomStatusUpdateRequest](values)
+				req, err := formutils.MapAndValidate[dto.RoomStatusUpdateRequest](values)
 				if err != nil {
 					// Check if it's a validation error specifically
 					if ve, ok := err.(validator.ValidationErrors); ok {
@@ -197,7 +198,7 @@ func GetRoomsTable(dbConn *gorm.DB) table.Generator {
 
 			// 3. Handle Full Update
 			var rt []*model2.RoomTimeslots
-			req, err := MapAndValidate[dto.RoomUpdateRequest](values)
+			req, err := formutils.MapAndValidate[dto.RoomUpdateRequest](values)
 			if err != nil {
 				// Check if it's a validation error specifically
 				if ve, ok := err.(validator.ValidationErrors); ok {

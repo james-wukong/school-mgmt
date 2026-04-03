@@ -23,9 +23,6 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 		user := auth.Auth(ctx)
 		userService := services.NewAdminUserService(dbConn)
 		semService := services.NewSemesterService(dbConn)
-		// subService := services.NewSubjectService(dbConn)
-		// tchService := services.NewTeacherService(dbConn)
-		// clsService := services.NewClassService(dbConn)
 		u, err := userService.GetUserSchoolID(ctx.Request.Context(), user.Id)
 		if err != nil {
 			panic(err)

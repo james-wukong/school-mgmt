@@ -63,11 +63,15 @@ func (r *teacherRepo) CreateWithAssoc(
 		}
 
 		// 3. Insert teacher-subject pairs
-		if err := tx.Model(&models.TeacherSubjects{}).Create(ts).Error; err != nil {
-			return err
+		if len(ts) > 0 {
+			if err := tx.Model(&models.TeacherSubjects{}).Create(ts).Error; err != nil {
+				return err
+			}
 		}
-		if err := tx.Model(&models.TeacherTimeslots{}).Create(tt).Error; err != nil {
-			return err
+		if len(tt) > 0 {
+			if err := tx.Model(&models.TeacherTimeslots{}).Create(tt).Error; err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -88,7 +92,10 @@ func (r *teacherRepo) CreateWithTeacherTimeslot(
 		}
 
 		// 3. Insert teacher-timeslot pairs
-		return tx.Model(&models.TeacherTimeslots{}).Create(tt).Error
+		if len(tt) > 0 {
+			return tx.Model(&models.TeacherTimeslots{}).Create(tt).Error
+		}
+		return nil
 	})
 }
 
@@ -146,22 +153,29 @@ func (r *teacherRepo) UpdateWithAssoc(
 			return err
 		}
 		// 2.2 Remove the previous teacher-timeslot pair for the semester
-		subQuery := tx.Model(&models.Timeslots{}).
-			Select("id").
-			Where("semester_id = ?", semID)
-		if err := tx.Where("teacher_id = ?", t.ID).
-			Where("timeslot_id IN (?)", subQuery).
-			Delete(&models.TeacherTimeslots{}).
-			Error; err != nil {
-			return err
+		if semID != 0 {
+			subQuery := tx.Model(&models.Timeslots{}).
+				Select("id").
+				Where("semester_id = ?", semID)
+			if err := tx.Where("teacher_id = ?", t.ID).
+				Where("timeslot_id IN (?)", subQuery).
+				Delete(&models.TeacherTimeslots{}).
+				Error; err != nil {
+				return err
+			}
 		}
 
 		// 3. Insert teacher-subject pairs
-		if err := tx.Model(&models.TeacherSubjects{}).Create(ts).Error; err != nil {
-			return err
+		if len(ts) > 0 {
+			if err := tx.Model(&models.TeacherSubjects{}).Create(ts).Error; err != nil {
+				return err
+			}
 		}
-		if err := tx.Model(&models.TeacherTimeslots{}).Create(tt).Error; err != nil {
-			return err
+
+		if len(tt) > 0 {
+			if err := tx.Model(&models.TeacherTimeslots{}).Create(tt).Error; err != nil {
+				return err
+			}
 		}
 		return nil
 	})
