@@ -53,7 +53,9 @@ func GetBulkRequirementsTable(dbConn *gorm.DB) table.Generator {
 					}
 					c = append(c, opt)
 				}
-				c[len(c)-1].Selected = true
+				if len(c) > 0 {
+					c[0].Selected = true
+				}
 
 				return c
 			}).

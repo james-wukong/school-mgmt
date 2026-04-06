@@ -2,102 +2,48 @@
 package dto
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/james-wukong/online-school-mgmt/internal/models"
+	"github.com/james-wukong/online-school-mgmt/internal/types"
 )
 
-type HourMinute time.Time
-
-type ClassTimes struct {
-	StartTime HourMinute `json:"start_time"`
-	EndTime   HourMinute `json:"end_time"`
+type TimeslotsBase struct {
+	SchoolID   int64            `form:"school_id" json:"school_id" csv:"school_id" validate:"-"`
+	SemesterID int64            `form:"semester_id" json:"semester_id" csv:"semester_id" validate:"-"`
+	Day        models.DayOfWeek `form:"day" json:"day" csv:"day" validate:"required"`
+	StartTime  types.ClockTime  `form:"start_time" json:"start_time" csv:"start_time" validate:"required"`
+	EndTime    types.ClockTime  `form:"end_time" json:"end_time" csv:"end_time" validate:"required"`
 }
 
-// UnmarshalJSON handles the "09:00" -> HourMinute conversion
-// When json.Unmarshal encounters a field of type HourMinute,
-// it checks if that type has an UnmarshalJSON([]byte) error method
-func (hm *HourMinute) UnmarshalJSON(b []byte) error {
-	s := strings.Trim(string(b), "\"")
-	if s == "" {
-		return nil
-	}
-	t, err := time.Parse("15:04", s)
+type TimeslotsCreateRequest struct {
+	TimeslotsBase
+}
+
+type TimeslotsUpdateRequest struct {
+	ID int64 `form:"id" json:"id" csv:"id" validate:"required"` // The ID is mandatory
+	TimeslotsBase
+}
+
+func (s *TimeslotsBase) toModel() (*models.Timeslots, error) {
+	return &models.Timeslots{
+		SchoolID:   s.SchoolID,
+		SemesterID: s.SemesterID,
+		DayOfWeek:  s.Day,
+		StartTime:  time.Time(s.StartTime),
+		EndTime:    time.Time(s.EndTime),
+	}, nil
+}
+
+func (s *TimeslotsCreateRequest) ToModel() (*models.Timeslots, error) {
+	return s.toModel()
+}
+
+func (s *TimeslotsUpdateRequest) ToModel() (*models.Timeslots, error) {
+	m, err := s.toModel()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	*hm = HourMinute(t)
-	return nil
-}
-
-// Schedule maps the JSON where keys are days of the week
-type Schedule map[string][]ClassTimes
-
-// Validate checks for overlapping time slots within the same day.
-func (s Schedule) Validate() error {
-	for day, slots := range s {
-		for i := 0; i < len(slots); i++ {
-			// if end time is earlier than start time, return error
-			if !time.Time(slots[i].EndTime).After(time.Time(slots[i].StartTime)) {
-				return fmt.Errorf(
-					"conflict detected on %s at period: %s - %s",
-					day, time.Time(slots[i].StartTime), time.Time(slots[i].EndTime),
-				)
-			}
-			for j := i + 1; j < len(slots); j++ {
-				// Simple logic: if Start of one is between Start/End of another
-				// This assumes you've converted strings to integers for comparison
-				if time.Time(slots[i].StartTime).Equal(time.Time(slots[j].StartTime)) {
-					return fmt.Errorf(
-						"conflict detected on %s at period %s",
-						day, time.Time(slots[i].StartTime),
-					)
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func (s Schedule) MapToTimeslots(semesterID, schoolID int64) []*models.Timeslots {
-	var t []*models.Timeslots
-	var day models.DayOfWeek
-	for key, value := range s {
-		if len(value) == 0 {
-			continue
-		}
-
-		day = ParseDay(key)
-		for _, slot := range value {
-			t = append(t, &models.Timeslots{
-				SchoolID:   schoolID,
-				SemesterID: semesterID,
-				DayOfWeek:  day,
-				StartTime:  time.Time(slot.StartTime),
-				EndTime:    time.Time(slot.EndTime),
-			})
-		}
-	}
-	return t
-}
-
-func ParseDay(key string) models.DayOfWeek {
-	var dayMap = map[string]models.DayOfWeek{
-		"monday":    models.Monday,
-		"tuesday":   models.Tuesday,
-		"wednesday": models.Wednesday,
-		"thursday":  models.Thursday,
-		"friday":    models.Friday,
-		"saturday":  models.Saturday,
-		"sunday":    models.Sunday,
-	}
-	normalized := strings.ToLower(key)
-
-	if day, ok := dayMap[normalized]; ok {
-		return day
-	}
-
-	return models.Monday
+	m.ID = s.ID
+	return m, nil
 }

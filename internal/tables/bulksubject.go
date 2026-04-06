@@ -151,7 +151,7 @@ func GetBulkSubjectsTable(dbConn *gorm.DB) table.Generator {
 
 		formList.HideContinueNewCheckBox()
 		formList.HideResetButton()
-		formList.SetTable("requirements").SetTitle("Requirements").SetDescription("Requirements")
+		formList.SetTable("subjects").SetTitle("Subjects").SetDescription("Subjects")
 
 		return subjects
 	}

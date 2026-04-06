@@ -6,10 +6,12 @@ import (
 
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ClassRepository interface {
 	Create(ctx context.Context, t *models.Classes) error
+	CreateInBatches(ctx context.Context, t []*models.Classes) error
 	Update(ctx context.Context, t *models.Classes) error
 	UpdateWithSemester(ctx context.Context, t *models.Classes) error
 	Delete(ctx context.Context, t *models.Classes) error
@@ -30,6 +32,22 @@ func NewClassRepository(db *gorm.DB) ClassRepository {
 // Create saves all relational tables
 func (r *classRepo) Create(ctx context.Context, t *models.Classes) error {
 	return r.db.WithContext(ctx).Create(t).Error
+}
+
+func (r *classRepo) CreateInBatches(ctx context.Context, t []*models.Classes) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return tx.Omit("Semester", "School").
+			Clauses(clause.OnConflict{
+				Columns: []clause.Column{
+					{Name: "semester_id"},
+					{Name: "grade"},
+					{Name: "class"},
+				},
+				UpdateAll: true,
+			}).
+			CreateInBatches(t, 100).
+			Error
+	})
 }
 
 // Update will only update classes table

@@ -18,8 +18,9 @@ func NewTimeslotService(db *gorm.DB) *TimeslotService {
 	}
 }
 
-func (s *TimeslotService) CreateTimeslot(ctx context.Context, t *models.Timeslots) error {
-	return s.repo.Create(ctx, t)
+func (s *TimeslotService) CreateTimeslotsInBatches(ctx context.Context, t []*models.Timeslots) error {
+	// return s.repo.Create(ctx, t)
+	return s.repo.CreateInBatches(ctx, t)
 }
 
 func (s *TimeslotService) List(

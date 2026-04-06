@@ -1,6 +1,8 @@
 package tables
 
 import (
+	"fmt"
+
 	"github.com/GoAdminGroup/go-admin/context"
 	"github.com/GoAdminGroup/go-admin/modules/auth"
 	"github.com/GoAdminGroup/go-admin/modules/db"
@@ -33,15 +35,15 @@ func GetSubjectsTable(dbConn *gorm.DB) table.Generator {
 		if !user.IsSuperAdmin() {
 			shoolIDField.FieldHide()
 		}
-		info.AddField("Code", "code", db.Varchar)
 		info.AddField("Name", "name", db.Varchar)
-		info.AddField("Requires_lab", "requires_lab", db.Bool).
+		info.AddField("Code", "code", db.Varchar)
+		info.AddField("Is_heavy", "is_heavy", db.Bool).
 			FieldEditAble(table2.Switch).
 			FieldEditOptions(types.FieldOptions{
 				{Value: "true", Text: "Y"}, // 放在第一个代表 on
 				{Value: "false", Text: "N"},
 			})
-		info.AddField("Is_heavy", "is_heavy", db.Bool).
+		info.AddField("Requires_lab", "requires_lab", db.Bool).
 			FieldEditAble(table2.Switch).
 			FieldEditOptions(types.FieldOptions{
 				{Value: "true", Text: "Y"}, // 放在第一个代表 on
@@ -50,7 +52,7 @@ func GetSubjectsTable(dbConn *gorm.DB) table.Generator {
 		info.AddField("Description", "description", db.Text)
 
 		// Buttons
-		info.AddButton(ctx, "Bulk Subjects Create", icon.Tv,
+		info.AddButton(ctx, "批量创建", icon.Tv,
 			action.PopUpWithIframe(
 				"/subject/bulk/iframe",
 				"Iframe Subjects",
@@ -69,23 +71,21 @@ func GetSubjectsTable(dbConn *gorm.DB) table.Generator {
 			FieldDisableWhenCreate()
 			// Define the field once
 		schoolField := formList.AddField("School_id", "school_id", db.Int8, form.Default).
-			FieldPostFilterFn(func(value types.PostFieldModel) interface{} {
-				return u.SchoolID
-			})
+			FieldDefault(fmt.Sprint(u.SchoolID))
 		// Apply the conditional visibility
 		if !user.IsSuperAdmin() {
 			schoolField.FieldHide()
 		}
-		formList.AddField("Code", "code", db.Varchar, form.Text).FieldMust()
 		formList.AddField("Name", "name", db.Varchar, form.Text).FieldMust()
-		formList.AddField("Requires_lab", "requires_lab", db.Bool, form.Switch).
+		formList.AddField("Code", "code", db.Varchar, form.Text).FieldMust()
+		formList.AddField("Is_heavy", "is_heavy", db.Bool, form.Switch).
 			FieldOptions(types.FieldOptions{
 				{Text: "Yes", Value: "true"},
 				{Text: "No", Value: "false"},
 			}).
 			FieldDefault("false").
 			FieldMust()
-		formList.AddField("Is_heavy", "is_heavy", db.Bool, form.Switch).
+		formList.AddField("Requires_lab", "requires_lab", db.Bool, form.Switch).
 			FieldOptions(types.FieldOptions{
 				{Text: "Yes", Value: "true"},
 				{Text: "No", Value: "false"},

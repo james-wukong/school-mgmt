@@ -17,6 +17,7 @@ type TeacherRepository interface {
 	CreateWithTeacherTimeslot(
 		ctx context.Context, t *models.Teachers, tt []*models.TeacherTimeslots,
 	) error
+	CreateWithSubjectJoinInBatches(ctx context.Context, t []*models.Teachers) error
 	Update(ctx context.Context, t *models.Teachers) error
 	GetByID(ctx context.Context, id int64) (*models.Teachers, error)
 	UpdateTeacherStatus(ctx context.Context, t *models.Teachers) error
@@ -94,6 +95,35 @@ func (r *teacherRepo) CreateWithTeacherTimeslot(
 		// 3. Insert teacher-timeslot pairs
 		if len(tt) > 0 {
 			return tx.Model(&models.TeacherTimeslots{}).Create(tt).Error
+		}
+		return nil
+	})
+}
+
+func (r *teacherRepo) CreateWithSubjectJoinInBatches(
+	ctx context.Context, t []*models.Teachers,
+) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. Save teachers in batches without associations
+		if err := tx.Omit("Subjects").
+			CreateInBatches(t, 100).
+			Error; err != nil {
+			return err
+		}
+		// 2. Save teacher subject join table in batches
+		var ts []*models.TeacherSubjects
+		for _, teacher := range t {
+			for _, r := range teacher.Subjects {
+				ts = append(ts, &models.TeacherSubjects{
+					TeacherID: teacher.ID,
+					SubjectID: r.ID,
+				})
+			}
+		}
+		if len(ts) > 0 {
+			if err := tx.CreateInBatches(ts, 100).Error; err != nil {
+				return err
+			}
 		}
 		return nil
 	})

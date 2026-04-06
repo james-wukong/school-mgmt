@@ -83,11 +83,12 @@ func GetTimeslotsTable(dbConn *gorm.DB) table.Generator {
 			}).
 			FieldWidth(100)
 		// 增加字段名 Semester StartDate
-		info.AddField("Sem Start", "start_date", db.Int8).FieldJoin(types.Join{
-			Table:     "semesters",   // The table to join with
-			Field:     "semester_id", // The foreign key in current table
-			JoinField: "id",          // The primary key in joined table
-		}).
+		info.AddField("Sem Start", "start_date", db.Int8).
+			FieldJoin(types.Join{
+				Table:     "semesters",   // The table to join with
+				Field:     "semester_id", // The foreign key in current table
+				JoinField: "id",          // The primary key in joined table
+			}).
 			FieldDisplay(func(value types.FieldModel) interface{} {
 				// 1. Check if the joined value is nil
 				if r, ok := value.Row["semesters_goadmin_join_start_date"]; !ok || r == "" {
@@ -142,7 +143,7 @@ func GetTimeslotsTable(dbConn *gorm.DB) table.Generator {
 			})
 
 		// Buttons
-		info.AddButton(ctx, "Bulk Timeslots Create", icon.Tv,
+		info.AddButton(ctx, "批量创建", icon.Tv,
 			action.PopUpWithIframe(
 				"/timeslot/bulk/iframe",
 				"Iframe Timeslot",
@@ -204,7 +205,7 @@ func GetTimeslotsTable(dbConn *gorm.DB) table.Generator {
 			FieldHelpMsg("修改时分即可").
 			FieldMust().
 			FieldPostFilterFn(func(value types.PostFieldModel) interface{} {
-				t, err := time.Parse(time.RFC3339, value.Value.First())
+				t, err := time.Parse(time.DateTime, value.Value.First())
 				if err != nil {
 					panic(err)
 				}
@@ -214,7 +215,7 @@ func GetTimeslotsTable(dbConn *gorm.DB) table.Generator {
 			FieldHelpMsg("修改时分即可").
 			FieldMust().
 			FieldPostFilterFn(func(value types.PostFieldModel) interface{} {
-				t, err := time.Parse(time.RFC3339, value.Value.First())
+				t, err := time.Parse(time.DateTime, value.Value.First())
 				if err != nil {
 					panic(err)
 				}

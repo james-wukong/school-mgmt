@@ -21,3 +21,7 @@ func NewClassService(db *gorm.DB) *ClassService {
 func (s *ClassService) GetByID(ctx context.Context, classID int64) (*models.Classes, error) {
 	return s.repo.GetByID(ctx, classID)
 }
+
+func (s *ClassService) CreateInBatches(ctx context.Context, t []*models.Classes) error {
+	return s.repo.CreateInBatches(ctx, t)
+}

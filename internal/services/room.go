@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	"github.com/james-wukong/online-school-mgmt/internal/repositories"
@@ -20,6 +22,34 @@ func NewRoomService(db *gorm.DB) *RoomService {
 
 func (s *RoomService) CreateRoom(ctx context.Context, t *models.Rooms) error {
 	return s.repo.Create(ctx, t)
+}
+
+func (s *RoomService) CreateRoomsInBatches(ctx context.Context,
+	buildingName string,
+	schoolID int64,
+	totalFloor, numOfRooms int,
+) error {
+	var rooms []*models.Rooms
+	if totalFloor == 0 || numOfRooms == 0 {
+		return errors.New("empty rooms")
+	}
+	for f := range totalFloor {
+		for n := range numOfRooms {
+			var room models.Rooms
+			floor := f + 1
+			room.SchoolID = schoolID
+			room.Building = buildingName
+			room.Capacity = 40
+			room.Name = fmt.Sprintf("Room %d-%02d", floor, n+1)
+			room.Code = fmt.Sprintf("R%d%02d", floor, n+1)
+			room.FloorNumber = &floor
+			room.RoomType = models.Regular
+			room.IsActive = true
+			rooms = append(rooms, &room)
+		}
+	}
+
+	return s.repo.CreateInBatches(ctx, rooms)
 }
 
 func (s *RoomService) CreateWithAssoc(

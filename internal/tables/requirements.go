@@ -7,6 +7,7 @@ import (
 	"github.com/GoAdminGroup/go-admin/context"
 	"github.com/GoAdminGroup/go-admin/modules/auth"
 	"github.com/GoAdminGroup/go-admin/modules/db"
+	form2 "github.com/GoAdminGroup/go-admin/plugins/admin/modules/form"
 	"github.com/GoAdminGroup/go-admin/plugins/admin/modules/table"
 	"github.com/GoAdminGroup/go-admin/template/icon"
 	"github.com/GoAdminGroup/go-admin/template/types"
@@ -45,7 +46,7 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 			info = info.Where("requirements.school_id", "=", u.SchoolID)
 		}
 
-		info.AddField("Id", "id", db.Int8)
+		info.AddField("Id", "id", db.Int8).FieldSortable()
 		if user.IsSuperAdmin() {
 			info.AddField("School_id", "school_id", db.Int8)
 		} else {
@@ -69,9 +70,10 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 				FormType: form.SelectSingle,
 				Width:    450,
 			}).
-			FieldFilterOptions(semFilterOpts)
+			FieldFilterOptions(semFilterOpts).
+			FieldSortable()
 		// TODO add subject info
-		info.AddField("Subject_id", "subject_id", db.Int8)
+		info.AddField("Subject_id", "subject_id", db.Int8).FieldSortable()
 		info.AddField("SubjectName", "name", db.Varchar).
 			// Force the field to reference the JOINED table column
 			FieldJoin(types.Join{
@@ -98,9 +100,10 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 				FormType: form.Text,
 				Operator: types.FilterOperatorLike,
 				Width:    450,
-			})
+			}).
+			FieldSortable()
 		// TODO add teacher info
-		info.AddField("Teacher_id", "teacher_id", db.Int8)
+		info.AddField("Teacher_id", "teacher_id", db.Int8).FieldSortable()
 		info.AddField("Teacher FirstName", "first_name", db.Varchar).
 			// Force the field to reference the JOINED table column
 			FieldJoin(types.Join{
@@ -113,7 +116,8 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 				FormType: form.Text,
 				Operator: types.FilterOperatorLike,
 				Width:    450,
-			})
+			}).
+			FieldSortable()
 		info.AddField("Teacher LastName", "last_name", db.Varchar).
 			// Force the field to reference the JOINED table column
 			FieldJoin(types.Join{
@@ -126,9 +130,11 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 				FormType: form.Text,
 				Operator: types.FilterOperatorLike,
 				Width:    450,
-			})
+			}).
+			FieldSortable()
 		// TODO add class info
-		info.AddField("Class_id", "class_id", db.Int8)
+		info.AddField("Class_id", "class_id", db.Int8).
+			FieldSortable()
 		info.AddField("ClassGrade", "grade", db.Varchar).
 			// Force the field to reference the JOINED table column
 			FieldJoin(types.Join{
@@ -163,9 +169,10 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 				FormType: form.Text,
 				Operator: types.FilterOperatorEqual,
 				Width:    450,
-			})
+			}).
+			FieldSortable()
 		// Buttons
-		info.AddButton(ctx, "Bulk Requirements Create", icon.Tv,
+		info.AddButton(ctx, "批量创建", icon.Tv,
 			action.PopUpWithIframe(
 				"/requirement/bulk/iframe",
 				"Iframe Requirement",
@@ -185,9 +192,9 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 		schoolField := formList.AddField("School_id", "school_id", db.Int8, form.Default).
 			FieldPostFilterFn(func(value types.PostFieldModel) interface{} {
 				if value.IsCreate() {
-					return u.SchoolID
+					return fmt.Sprint(u.SchoolID)
 				}
-				return value.Value
+				return value.Value.First()
 			})
 		// Apply the conditional visibility
 		if !user.IsSuperAdmin() {
@@ -206,6 +213,13 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 
 		formList.HideResetButton()
 		formList.SetTable("requirements").SetTitle("Requirements").SetDescription("Requirements")
+
+		formList.SetPreProcessFn(func(values form2.Values) form2.Values {
+			for k, v := range values {
+				fmt.Printf("k is %s and values is %+v\n", k, v)
+			}
+			return values
+		})
 
 		return requirements
 	}

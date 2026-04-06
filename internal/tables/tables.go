@@ -49,6 +49,7 @@ func GetGenerators(db *gorm.DB) table.GeneratorList {
 	return table.GeneratorList{
 		"bulkclasses":      GetBulkClassesTable(db),
 		"bulkrequirements": GetBulkRequirementsTable(db),
+		"bulkrooms":        GetBulkRoomsTable(db),
 		"bulksubjects":     GetBulkSubjectsTable(db),
 		"bulktimeslots":    GetBulkTimeslotsTable(db),
 		"bulkteachers":     GetBulkTeachersTable(db),
@@ -56,6 +57,7 @@ func GetGenerators(db *gorm.DB) table.GeneratorList {
 		"classes":      GetClassesTable(db),
 		"rooms":        GetRoomsTable(db),
 		"requirements": GetRequirementsTable(db),
+		"sample_files": GetSampleFilesTable(db),
 		"semesters":    GetSemestersTable(db),
 		"subjects":     GetSubjectsTable(db),
 		"teachers":     GetTeachersTable(db),

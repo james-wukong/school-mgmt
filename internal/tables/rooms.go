@@ -10,7 +10,9 @@ import (
 	"github.com/GoAdminGroup/go-admin/modules/db"
 	form2 "github.com/GoAdminGroup/go-admin/plugins/admin/modules/form"
 	"github.com/GoAdminGroup/go-admin/plugins/admin/modules/table"
+	"github.com/GoAdminGroup/go-admin/template/icon"
 	"github.com/GoAdminGroup/go-admin/template/types"
+	"github.com/GoAdminGroup/go-admin/template/types/action"
 	"github.com/GoAdminGroup/go-admin/template/types/form"
 	table2 "github.com/GoAdminGroup/go-admin/template/types/table"
 	"github.com/go-playground/validator/v10"
@@ -57,6 +59,17 @@ func GetRoomsTable(dbConn *gorm.DB) table.Generator {
 		info.AddField("Floor_number", "floor_number", db.Int4)
 		info.AddField("Created_at", "created_at", db.Timestamptz)
 		info.AddField("Updated_at", "updated_at", db.Timestamptz)
+		// Buttons
+		info.AddButton(ctx, "批量创建", icon.Tv,
+			action.PopUpWithIframe(
+				"/room/bulk/iframe",
+				"Iframe Rooms",
+				action.IframeData{
+					Src: "/admin/info/bulkrooms/new",
+				},
+				"900px",
+				"600px",
+			))
 
 		info.SetTable("rooms").SetTitle("Rooms").SetDescription("Rooms")
 
@@ -64,9 +77,7 @@ func GetRoomsTable(dbConn *gorm.DB) table.Generator {
 		formList.AddField("Id", "id", db.Int8, form.Default).
 			FieldDisableWhenCreate()
 		schoolField := formList.AddField("School_id", "school_id", db.Int8, form.Default).
-			FieldPostFilterFn(func(value types.PostFieldModel) interface{} {
-				return fmt.Sprint(u.SchoolID)
-			})
+			FieldDefault(fmt.Sprint(u.SchoolID))
 		// Apply the conditional visibility
 		if !user.IsSuperAdmin() {
 			schoolField.FieldHide()
@@ -219,10 +230,14 @@ func GetRoomsTable(dbConn *gorm.DB) table.Generator {
 					TimeslotID: slotID,
 				})
 			}
-			//
-			semID, err := strconv.ParseInt(values.Get("semester_id"), 10, 64)
-			if err != nil {
-				return err
+			var semID int64
+			if values.Get("semester_id") == "" {
+				semID = 0
+			} else {
+				semID, err = strconv.ParseInt(values.Get("semester_id"), 10, 64)
+				if err != nil {
+					return err
+				}
 			}
 			if err := roomService.UpdateWithAssoc(
 				ctx.Request.Context(), room, rt, semID); err != nil {

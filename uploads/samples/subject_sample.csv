@@ -1,0 +1,4 @@
+name,code,description,requires_lab,is_heavy
+mathematics,math,,TRUE,TRUE
+science,sci,111,TRUE,TRUE
+information technology,IT,,TRUE,TRUE

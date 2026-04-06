@@ -42,20 +42,48 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 		if !user.IsSuperAdmin() {
 			info = info.Where("school_id", "=", u.SchoolID)
 		}
-		info.AddField("Id", "id", db.Int8)
+		info.AddField("Id", "id", db.Int8).
+			FieldSortable()
 		shoolIDField := info.AddField("School_id", "school_id", db.Int8)
 		if !user.IsSuperAdmin() {
 			shoolIDField.FieldHide()
 		}
-		info.AddField("Employee_id", "employee_id", db.Int8)
 		info.AddField("Is_active", "is_active", db.Bool).
 			FieldEditAble(table2.Switch).
 			FieldEditOptions(types.FieldOptions{
 				{Value: "true", Text: "Y"}, // 放在第一个代表 on
 				{Value: "false", Text: "N"},
 			})
-		info.AddField("First_name", "first_name", db.Varchar)
+		info.AddField("First_name", "first_name", db.Varchar).
+			FieldSortable()
 		info.AddField("Last_name", "last_name", db.Varchar)
+		info.AddField("Subjects", "name", db.Varchar).
+			FieldDisplay(func(value types.FieldModel) interface{} {
+				var subjects string
+				tID, err := strconv.ParseInt(value.ID, 10, 64)
+				if err != nil {
+					panic(err)
+				}
+				teacher, err := teacherService.GetTeacher(ctx.Request.Context(), tID)
+				if err != nil {
+					panic(err)
+				}
+				if len(teacher.Subjects) == 0 {
+					return "No Subject Assigned"
+				}
+
+				for i, sub := range teacher.Subjects {
+					if i == 0 {
+						subjects = sub.Name
+					} else {
+						subjects += fmt.Sprintf(" | %s", sub.Name)
+					}
+				}
+
+				return subjects
+			})
+		info.AddField("Employee_id", "employee_id", db.Int8).
+			FieldSortable()
 		info.AddField("Email", "email", db.Varchar)
 		info.AddField("Phone", "phone", db.Varchar)
 		info.AddField("Employment_type", "employment_type", db.Varchar)
@@ -64,7 +92,7 @@ func GetTeachersTable(dbConn *gorm.DB) table.Generator {
 		info.AddField("Created_at", "created_at", db.Timestamptz)
 		info.AddField("Updated_at", "updated_at", db.Timestamptz)
 		// Buttons
-		info.AddButton(ctx, "Bulk Teachers Create", icon.Tv,
+		info.AddButton(ctx, "批量创建", icon.Tv,
 			action.PopUpWithIframe(
 				"/teacher/bulk/iframe",
 				"Iframe Teachers",

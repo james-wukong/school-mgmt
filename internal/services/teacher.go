@@ -44,6 +44,12 @@ func (s *TeacherService) CreateWithTeacherTimeslot(
 	return s.repo.CreateWithTeacherTimeslot(ctx, t, tt)
 }
 
+func (s *TeacherService) CreateWithSubjectJoinInBatches(
+	ctx context.Context, t []*models.Teachers,
+) error {
+	return s.repo.CreateWithSubjectJoinInBatches(ctx, t)
+}
+
 func (s *TeacherService) UpdateStatus(ctx context.Context, t *models.Teachers) error {
 	return s.repo.UpdateTeacherStatus(ctx, t)
 }

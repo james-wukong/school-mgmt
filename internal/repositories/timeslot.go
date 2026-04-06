@@ -5,10 +5,12 @@ import (
 
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type TimeslotRepository interface {
 	Create(ctx context.Context, t *models.Timeslots) error
+	CreateInBatches(ctx context.Context, t []*models.Timeslots) error
 	Update(ctx context.Context, t *models.Timeslots) error
 	GetByID(ctx context.Context, id int64) (*models.Timeslots, error)
 	UpdateWithAssoc(ctx context.Context, t *models.Timeslots) error
@@ -28,6 +30,22 @@ func NewTimeslotRepository(db *gorm.DB) TimeslotRepository {
 
 func (r *timeslotsRepo) Create(ctx context.Context, t *models.Timeslots) error {
 	return r.db.WithContext(ctx).Create(t).Error
+}
+
+func (r *timeslotsRepo) CreateInBatches(ctx context.Context, t []*models.Timeslots) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return tx.Omit("Semester", "School").
+			Clauses(clause.OnConflict{
+				Columns: []clause.Column{
+					{Name: "semester_id"},
+					{Name: "day_of_week"},
+					{Name: "start_time"},
+				},
+				DoNothing: true,
+			}).
+			CreateInBatches(t, 100).
+			Error
+	})
 }
 
 func (r *timeslotsRepo) Update(ctx context.Context, t *models.Timeslots) error {

@@ -1,0 +1,3 @@
+weekly_sessions,min_day_gap,preferred_days,subject_assoc_id,subject_assoc_name,teacher_assoc_id,teacher_assoc_first_name,teacher_assoc_last_name,class_assoc_id,class_assoc_grade,class_assoc_class
+5,2,1,3,2,1000,math,1000,frank,joe,1047,1,1
+5,3,1,2,1001,chinese,1001,daniel,voe,1048,1,2

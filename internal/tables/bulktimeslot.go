@@ -1,9 +1,10 @@
 package tables
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 
 	"github.com/GoAdminGroup/go-admin/context"
@@ -13,11 +14,14 @@ import (
 	"github.com/GoAdminGroup/go-admin/template/types"
 	"github.com/GoAdminGroup/go-admin/template/types/form"
 	"github.com/james-wukong/online-school-mgmt/internal/dto"
+	"github.com/james-wukong/online-school-mgmt/internal/models"
+	"github.com/james-wukong/online-school-mgmt/internal/provider"
 	"github.com/james-wukong/online-school-mgmt/internal/services"
 	"gorm.io/gorm"
 
 	// table2 "github.com/GoAdminGroup/go-admin/template/types/table"
 	form2 "github.com/GoAdminGroup/go-admin/plugins/admin/modules/form"
+	formutils "github.com/james-wukong/online-school-mgmt/internal/utils/form"
 )
 
 func GetBulkTimeslotsTable(dbConn *gorm.DB) table.Generator {
@@ -26,6 +30,7 @@ func GetBulkTimeslotsTable(dbConn *gorm.DB) table.Generator {
 		user := auth.Auth(ctx)
 		userService := services.NewAdminUserService(dbConn)
 		semService := services.NewSemesterService(dbConn)
+		tsService := services.NewTimeslotService(dbConn)
 		u, err := userService.GetUserSchoolID(ctx.Request.Context(), user.Id)
 		if err != nil {
 			panic(err)
@@ -46,61 +51,123 @@ func GetBulkTimeslotsTable(dbConn *gorm.DB) table.Generator {
 							v.ID, v.Year, v.Semester,
 						),
 						Value: fmt.Sprint(v.ID)}
-					if v.ID == val.Row["semester_id"] {
-						opt.Selected = true
-					}
 					c = append(c, opt)
+				}
+				if len(c) > 0 {
+					c[0].Selected = true
 				}
 
 				return c
 			}).
 			FieldMust().
 			FieldDivider("Semester Settings")
+		formList.AddField("Choose Source Type", "source_type", db.Tinyint, form.SelectSingle).
+			FieldOptions(types.FieldOptions{
+				{Text: "JSON", Value: "0"},
+				{Text: "CSV", Value: "1"},
+			}).
+			FieldOnChooseHide("1", "json").
+			FieldOnChooseShow("0", "json").
+			FieldOnChooseShow("1", "csv").
+			FieldDefault("1").
+			FieldDivider("Source Settings")
+
+		formList.AddField("JSON", "json", db.Int, form.TextArea).
+			FieldDefault(printSampleTimeslotsJSON()).
+			FieldHelpMsg(`采用json格式: 参考默认值`)
+		formList.AddField("CSV", "csv", db.Int, form.File).
+			FieldOptionExt(map[string]interface{}{
+				"allowClear": true,
+			})
 
 		formList.AddField("Id", "id", db.Int8, form.Default).
 			FieldDisableWhenCreate().
 			FieldHide()
-		formList.AddField("Timeslots", "timeslots", db.Int4, form.TextArea).
-			FieldDefault(printSampleTimeslotsJSON()).
-			FieldMust().
-			FieldHelpMsg(`采用json格式: {"day":[{"start_time": time, "end_time": time}]}`).
-			FieldDivider("Timeslot Settings")
 
 		// 取代新增函数
 		formList.SetInsertFn(func(values form2.Values) error {
 			// values 为传入的表单参数
-			// 1. validate input
-			if values.IsEmpty("semester_id", "timeslots") {
-				return errors.New("semester id and timeslots can not be empty")
-			}
-			// Convert the string to int64
-			// base 10 (decimal), bitSize 64 (for int64)
-			semID, err := strconv.ParseInt(values.Get("semester_id"), 10, 64)
+			// 1. Get the request object from the context
+			// values.Context is the *context.Context provided by GoAdmin
+			var reader provider.DataReader[dto.TimeslotsCreateRequest]
+			var filePath string
 
+			// when user chooses JSON
+			switch values.Get("source_type") {
+			case "0":
+				text := values.Get("json")
+				if text == "" {
+					return errors.New("empty json")
+				}
+				reader = provider.NewTextReader[dto.TimeslotsCreateRequest](text)
+
+			// when user chooses File
+			case "1":
+				filePath := "./uploads/" + values.Get("csv")
+				if filePath == "" {
+					return errors.New("no file uploaded")
+				}
+				csvValidation := provider.FileValidationConfig{
+					AllowedExtensions: []string{".csv"},
+					MaxSizeBytes:      5 * 1024 * 1024, // 5 MB
+				}
+				// Validate before processing
+				if err := provider.ValidateFile(filePath, csvValidation); err != nil {
+					return err // GoAdmin shows this message to the user
+				}
+
+				reader = provider.NewCSVReader[dto.TimeslotsCreateRequest](filePath, false)
+
+			default:
+				return errors.New("unsupported source type")
+			}
+
+			// Always clean up the uploaded file when done
+			defer func() {
+				if values.Get("csv") != "" {
+					if err := os.Remove("./uploads/" + values.Get("csv")); err != nil {
+						log.Printf("cleanup failed for %s: %v", filePath, err)
+					}
+				}
+			}()
+
+			// Start DB Process
+			var timeslots []*models.Timeslots
+			var errs []error
+
+			rows, err := reader.Read(ctx.Request.Context())
 			if err != nil {
 				return err
 			}
-			sem, err := semService.GetByID(ctx.Request.Context(), semID)
+			sID, err := strconv.ParseInt(values.Get("semester_id"), 10, 64)
 			if err != nil {
 				return err
 			}
-			// Create an instance of the struct
-			var timetable dto.Schedule
 
-			// Convert the JSON string to a byte slice and unmarshal into the struct
-			err = json.Unmarshal([]byte(values.Get("timeslots")), &timetable)
-			if err != nil {
-				return err
-			}
-			// check input data is consistent
-			if err := timetable.Validate(); err != nil {
-				return err
-			}
-			// Now we are safe to save data into database
-			sem.Timeslots = timetable.MapToTimeslots(semID, sem.SchoolID)
-			err = semService.ReplaceWithTimeslotAssoc(ctx.Request.Context(), sem)
+			for i, row := range rows {
+				// Validate struct
+				if err := formutils.Validate.Struct(row); err != nil {
+					errs = append(errs, fmt.Errorf("row %d error: %v", i, err))
+				}
+				// reconstruct requirement struct
+				row.SchoolID = u.SchoolID
+				row.SemesterID = sID
 
-			return err
+				r, err := row.ToModel()
+				if err != nil {
+					return err
+				}
+				timeslots = append(timeslots, r)
+			}
+			if len(errs) > 0 {
+				// TODO log errors or email errors
+				for _, e := range errs {
+					fmt.Printf("err: %s\n", e.Error())
+				}
+				return errors.New("check console for detail errors")
+			}
+
+			return tsService.CreateTimeslotsInBatches(ctx.Request.Context(), timeslots)
 		})
 
 		formList.HideContinueNewCheckBox()

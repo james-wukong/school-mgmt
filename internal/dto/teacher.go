@@ -9,8 +9,8 @@ type TeacherBase struct {
 	// School context is usually required for every teacher
 	SchoolID int64 `form:"school_id" csv:"school_id" json:"school_id" validate:"-"`
 
-	FirstName string `form:"first_name" csv:"first_name" json:"first_name" validate:"required,min=2,max=100"`
-	LastName  string `form:"last_name" csv:"last_name" json:"last_name" validate:"required,min=2,max=100"`
+	FirstName string `form:"first_name" csv:"first_name" json:"first_name" validate:"required,min=1,max=100"`
+	LastName  string `form:"last_name" csv:"last_name" json:"last_name" validate:"required,min=1,max=100"`
 
 	// Email is optional in your model (*string), but often required in business logic
 	Email string `form:"email" csv:"email" json:"email" validate:"omitempty,email"`
@@ -110,8 +110,8 @@ func (req *TeacherBatchCreateRequest) ToModel() (*models.Teachers, error) {
 		return nil, err
 	}
 	if len(req.SubjectIDs) > 0 {
-		for i, sub := range req.SubjectIDs {
-			m.Subjects[i] = &models.Subjects{ID: sub}
+		for _, sub := range req.SubjectIDs {
+			m.Subjects = append(m.Subjects, &models.Subjects{ID: sub})
 		}
 	}
 	m.EmployeeID = req.EmployeeID

@@ -117,7 +117,7 @@ func GetBulkTeachersTable(dbConn *gorm.DB) table.Generator {
 			if err != nil {
 				return err
 			}
-			// tchService := services.NewTeacherService(dbConn)
+			tchService := services.NewTeacherService(dbConn)
 
 			schID, err := strconv.ParseInt(values.Get("school_id"), 10, 64)
 			if err != nil {
@@ -146,13 +146,12 @@ func GetBulkTeachersTable(dbConn *gorm.DB) table.Generator {
 				return errors.New("check console for detail errors")
 			}
 
-			// return tchService.FilterAndCreateInBatches(ctx.Request.Context(), tchs)
-			return nil
+			return tchService.CreateWithSubjectJoinInBatches(ctx.Request.Context(), tchs)
 		})
 
 		formList.HideContinueNewCheckBox()
 		formList.HideResetButton()
-		formList.SetTable("requirements").SetTitle("Requirements").SetDescription("Requirements")
+		formList.SetTable("teachers").SetTitle("Teachers").SetDescription("Teachers")
 
 		return teachers
 	}

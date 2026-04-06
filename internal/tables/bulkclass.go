@@ -3,9 +3,7 @@ package tables
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/GoAdminGroup/go-admin/context"
 	"github.com/GoAdminGroup/go-admin/modules/auth"
@@ -27,6 +25,7 @@ func GetBulkClassesTable(dbConn *gorm.DB) table.Generator {
 		user := auth.Auth(ctx)
 		userService := services.NewAdminUserService(dbConn)
 		semService := services.NewSemesterService(dbConn)
+		clsService := services.NewClassService(dbConn)
 		u, err := userService.GetUserSchoolID(ctx.Request.Context(), user.Id)
 		if err != nil {
 			panic(err)
@@ -47,10 +46,10 @@ func GetBulkClassesTable(dbConn *gorm.DB) table.Generator {
 							v.ID, v.Year, v.Semester,
 						),
 						Value: fmt.Sprint(v.ID)}
-					if v.ID == val.Row["semester_id"] {
-						opt.Selected = true
-					}
 					c = append(c, opt)
+				}
+				if len(c) > 0 {
+					c[0].Selected = true
 				}
 
 				return c
@@ -58,66 +57,67 @@ func GetBulkClassesTable(dbConn *gorm.DB) table.Generator {
 			FieldMust().
 			FieldDivider("Semester Settings")
 
+		formList.AddTable("New", "grade_class", func(panel *types.FormPanel) {
+			panel.AddField("Grade", "grade", db.Int, form.Number).
+				FieldDefault("1").
+				FieldHideLabel()
+			panel.AddField("Number of Classes", "classes", db.Varchar, form.Number).
+				FieldDefault("8").
+				FieldHideLabel()
+		})
+
 		formList.AddField("Id", "id", db.Int8, form.Default).
 			FieldDisableWhenCreate().
 			FieldHide()
-		formList.AddField("Grade-Class", "grades", db.Int4, form.Text).
-			FieldMust().
-			FieldHelpMsg("eg: 1-3, 2-5,3-8, 左边是年级，右边是班级数量，年级和班级用-分割，年级之间用，分割").
-			FieldDivider("Class Settings")
 
 		// 取代新增函数
 		formList.SetInsertFn(func(values form2.Values) error {
 			// values 为传入的表单参数
 			var cls []*model2.Classes
+
+			for k, v := range values {
+				fmt.Printf("k is %s and value is: %+v", k, v)
+			}
 			// 1. validate input
-			if values.IsEmpty("semester_id", "grades") {
+			if values.IsEmpty("semester_id") {
 				return errors.New("semester id and grades can not be empty")
+			}
+			if len(values["grade"]) > 0 && len(values["grade"]) != len(values["classes"]) {
+				return errors.New("number of grade and classes don't match")
 			}
 			// Convert the string to int64
 			// base 10 (decimal), bitSize 64 (for int64)
 			sID, err := strconv.ParseInt(values.Get("semester_id"), 10, 64)
-
 			if err != nil {
 				return err
 			}
-			sem, err := semService.GetByID(ctx.Request.Context(), sID)
-			if err != nil {
-				return err
-			}
-			reg := regexp.MustCompile("[^0-9-,]+")
-
-			// Replace all characters matching the regex with an empty string
-			pairs := reg.ReplaceAllString(values.Get("grades"), "")
-			for _, v := range strings.Split(pairs, ",") {
-				if v == "" {
-					continue
-				}
-				pair := strings.Split(v, "-")
-				g, err := strconv.ParseInt(pair[0], 10, 0)
+			for i, g := range values["grade"] {
+				ig, err := strconv.ParseInt(g, 10, 64)
 				if err != nil {
 					return err
 				}
-				total, err := strconv.ParseInt(pair[1], 10, 0)
+				numOfClass, err := strconv.ParseInt(values["classes"][i], 10, 64)
 				if err != nil {
 					return err
 				}
-				for t := range total {
-					cls = append(cls, &model2.Classes{
-						SemesterID: sID,
-						Grade:      int(g),
-						ClassName:  strconv.Itoa(int(t) + 1),
-					})
+				for c := range numOfClass {
+					class := &model2.Classes{
+						SemesterID:   sID,
+						Grade:        int(ig),
+						ClassName:    fmt.Sprintf("%02d", c+1),
+						SchoolID:     u.SchoolID,
+						StudentCount: 40,
+					}
+					fmt.Printf("class: %+v\n", class)
+					cls = append(cls, class)
 				}
 			}
-			err = semService.AppendClasses(ctx.Request.Context(), sem, cls)
-			if err != nil {
-				return err
-			}
-			return nil
+
+			return clsService.CreateInBatches(ctx.Request.Context(), cls)
 		})
 
 		formList.HideResetButton()
+		formList.HideContinueNewCheckBox()
 		formList.SetTable("classes").SetTitle("Classes").SetDescription("Classes")
 		return classes
 	}

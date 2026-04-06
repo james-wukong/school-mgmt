@@ -32,7 +32,8 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 			info = info.Where("classes.school_id", "=", u.SchoolID)
 		}
 
-		info.AddField("Id", "id", db.Int8)
+		info.AddField("Id", "id", db.Int8).
+			FieldSortable()
 		shoolIDField := info.AddField("School_id", "school_id", db.Int8)
 		if !user.IsSuperAdmin() {
 			shoolIDField.FieldHide()
@@ -105,22 +106,23 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 				if r, ok := value.Row["semesters_goadmin_join_end_date"]; !ok || r == "" {
 					return template.HTML("-") // Return a string or empty template.HTML
 				}
-				// // 2. Safely return the value
+				// 2. Safely return the value
 				return template.HTML(fmt.Sprint(value.Row["semesters_goadmin_join_end_date"]))
 			}).FieldWidth(100)
-		info.AddField("Grade", "grade", db.Int4).FieldWidth(100)
+		info.AddField("Grade", "grade", db.Int4).FieldWidth(100).
+			FieldSortable()
 		info.AddField("Class", "class", db.Varchar).FieldWidth(100)
 		info.AddField("Student_count", "student_count", db.Int4)
 
 		// Buttons
-		info.AddButton(ctx, "Bulk Class Create", icon.Tv,
+		info.AddButton(ctx, "批量创建", icon.Tv,
 			action.PopUpWithIframe(
 				"/class/bulk/iframe",
 				"Iframe Class",
 				action.IframeData{
 					Src: "/admin/info/bulkclasses/new",
 				},
-				"900px",
+				"1100px",
 				"600px",
 			))
 		// info.AddButton(ctx, "ajax", icon.Android, action.Ajax("/admin/ajax",
@@ -160,6 +162,14 @@ func GetClassesTable(dbConn *gorm.DB) table.Generator {
 			FieldDisableWhenCreate().
 			FieldMust().
 			FieldDivider("Class Settings")
+		schoolField := formList.AddField("School_id", "school_id", db.Int8, form.Default).
+			FieldPostFilterFn(func(types.PostFieldModel) interface{} {
+				return fmt.Sprint(u.SchoolID)
+			})
+		// Apply the conditional visibility
+		if !user.IsSuperAdmin() {
+			schoolField.FieldHide()
+		}
 		formList.AddField("Grade", "grade", db.Int4, form.Number).
 			FieldMust()
 		formList.AddField("Class", "class", db.Varchar, form.Text).

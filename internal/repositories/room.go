@@ -5,6 +5,7 @@ import (
 
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type RoomRepository interface {
@@ -13,6 +14,7 @@ type RoomRepository interface {
 		ctx context.Context, t *models.Rooms,
 		tt []*models.RoomTimeslots,
 	) error
+	CreateInBatches(ctx context.Context, t []*models.Rooms) error
 	Update(ctx context.Context, t *models.Rooms) error
 	UpdateRoomStatus(ctx context.Context, t *models.Rooms) error
 	UpdateWithAssoc(
@@ -60,6 +62,21 @@ func (r *roomRepo) CreateWithAssoc(
 	})
 }
 
+func (r *roomRepo) CreateInBatches(ctx context.Context, t []*models.Rooms) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return tx.
+			Omit("School", "Timeslots").
+			Clauses(clause.OnConflict{
+				Columns: []clause.Column{
+					{Name: "school_id"},
+					{Name: "code"},
+				}, // or unique key
+				UpdateAll: true,
+			}).
+			CreateInBatches(t, 100).Error
+	})
+}
+
 func (r *roomRepo) Update(ctx context.Context, t *models.Rooms) error {
 	// r.db.Model(&t).Select("IsActive").Updates(t).Error
 	return r.db.WithContext(ctx).Save(t).Error
@@ -90,6 +107,10 @@ func (r *roomRepo) UpdateWithAssoc(
 		// 1. Upsert the Room
 		if err := tx.Omit("School", "Timeslots").Save(t).Error; err != nil {
 			return err
+		}
+
+		if semID == 0 || len(tt) == 0 {
+			return nil
 		}
 
 		// 2 Remove the previous teacher-timeslot pair for the semester
