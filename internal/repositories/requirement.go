@@ -20,7 +20,9 @@ type RequirementRepository interface {
 		ctx context.Context, semesterID int64, version float64,
 	) ([]*models.Requirements, error)
 	GetVersion(ctx context.Context, semesterID int64) decimal.Decimal
-	GetRequirementSemesterVersion(ctx context.Context) ([]*models.RequirementVersion, error)
+	GetRequirementSemesterVersion(
+		ctx context.Context, schoolID int64,
+	) ([]*models.RequirementVersion, error)
 }
 
 type requirementsRepo struct {
@@ -126,7 +128,7 @@ func (r *requirementsRepo) GetVersion(ctx context.Context, semesterID int64) dec
 		Select("id", "version").
 		Where("semester_id = ?", semesterID).
 		Order("version DESC").
-		First(&m, 1).
+		First(&m).
 		Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -137,11 +139,12 @@ func (r *requirementsRepo) GetVersion(ctx context.Context, semesterID int64) dec
 	return m.Version.Add(decimal.NewFromFloat(0.01))
 }
 
-func (r *requirementsRepo) GetRequirementSemesterVersion(ctx context.Context) (
+func (r *requirementsRepo) GetRequirementSemesterVersion(ctx context.Context, schoolID int64) (
 	[]*models.RequirementVersion, error,
 ) {
 	var results []*models.RequirementVersion
 	if err := r.db.WithContext(ctx).
+		Where("school_id = ?", schoolID).
 		Select("DISTINCT ON (semester_id, version) id, semester_id, version").
 		Order(clause.OrderBy{Columns: []clause.OrderByColumn{
 			{Column: clause.Column{Name: "semester_id"}, Desc: false},

@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/james-wukong/online-school-mgmt/internal/api/ajax"
+	"github.com/james-wukong/online-school-mgmt/internal/api/export"
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	"github.com/james-wukong/online-school-mgmt/internal/tables"
 	"github.com/james-wukong/online-school-mgmt/pages"
@@ -55,12 +56,16 @@ func startServer() {
 
 	// AjAX api
 	eng.Data("POST", "/admin/ajax/teacher/sem_timeslot",
-		ajax.AjaxTeacherSemesterTSHanlder(db),
+		ajax.AjaxTeacherSemesterTSHandler(db),
 		false,
 	)
 	eng.Data("POST", "/admin/ajax/room/sem_timeslot",
-		ajax.AjaxRoomSemesterTSHanlder(db),
+		ajax.AjaxRoomSemesterTSHandler(db),
 		false,
+	)
+	eng.Data("POST", "/export/reports",
+		export.ExportReportHandler(db),
+		true,
 	)
 
 	eng.HTML("GET", "/admin", pages.GetDashBoard)

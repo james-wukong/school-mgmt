@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func AjaxTeacherSemesterTSHanlder(dbConn *gorm.DB) context.Handler {
+func AjaxTeacherSemesterTSHandler(dbConn *gorm.DB) context.Handler {
 
 	// 1. Authenticate the request
 	// 3. Return JSON response

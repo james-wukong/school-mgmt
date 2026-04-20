@@ -59,8 +59,8 @@ func (s *RequirementService) ValidateAssoc(
 	return errs
 }
 
-func (s *RequirementService) GetRequirementSemesterVersion(ctx context.Context) (
+func (s *RequirementService) GetRequirementSemesterVersion(ctx context.Context, schoolID int64) (
 	[]*models.RequirementVersion, error,
 ) {
-	return s.repo.GetRequirementSemesterVersion(ctx)
+	return s.repo.GetRequirementSemesterVersion(ctx, schoolID)
 }
