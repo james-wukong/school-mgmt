@@ -22,7 +22,7 @@ type semesterRepo struct {
 	db *gorm.DB
 }
 
-func NewSemesterRepository(db *gorm.DB) SemesterRepository {
+func NewSemesterRepository(db *gorm.DB) *semesterRepo {
 	return &semesterRepo{
 		db: db,
 	}

@@ -17,7 +17,7 @@ type teacherSubjectRepo struct {
 	db *gorm.DB
 }
 
-func NewTeacherSubjectRepository(db *gorm.DB) TeacherSubjectRepository {
+func NewTeacherSubjectRepository(db *gorm.DB) *teacherSubjectRepo {
 	return &teacherSubjectRepo{
 		db: db,
 	}

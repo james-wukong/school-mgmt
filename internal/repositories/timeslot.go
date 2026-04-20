@@ -22,7 +22,7 @@ type timeslotsRepo struct {
 	db *gorm.DB
 }
 
-func NewTimeslotRepository(db *gorm.DB) TimeslotRepository {
+func NewTimeslotRepository(db *gorm.DB) *timeslotsRepo {
 	return &timeslotsRepo{
 		db: db,
 	}

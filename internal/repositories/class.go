@@ -23,7 +23,7 @@ type classRepo struct {
 	db *gorm.DB
 }
 
-func NewClassRepository(db *gorm.DB) ClassRepository {
+func NewClassRepository(db *gorm.DB) *classRepo {
 	return &classRepo{
 		db: db,
 	}

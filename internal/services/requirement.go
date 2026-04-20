@@ -25,6 +25,9 @@ func NewRequirementService(db *gorm.DB) *RequirementService {
 		tchRepo: repositories.NewTeacherRepository(db),
 	}
 }
+func (s *RequirementService) GetByID(ctx context.Context, id int64) (*models.Requirements, error) {
+	return s.repo.GetByID(ctx, id)
+}
 
 func (s *RequirementService) SaveRequirements(ctx context.Context, t []*models.Requirements) error {
 	return s.repo.SaveInBatch(ctx, t)
@@ -54,4 +57,10 @@ func (s *RequirementService) ValidateAssoc(
 		))
 	}
 	return errs
+}
+
+func (s *RequirementService) GetRequirementSemesterVersion(ctx context.Context) (
+	[]*models.RequirementVersion, error,
+) {
+	return s.repo.GetRequirementSemesterVersion(ctx)
 }

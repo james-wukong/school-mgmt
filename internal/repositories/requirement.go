@@ -20,13 +20,14 @@ type RequirementRepository interface {
 		ctx context.Context, semesterID int64, version float64,
 	) ([]*models.Requirements, error)
 	GetVersion(ctx context.Context, semesterID int64) decimal.Decimal
+	GetRequirementSemesterVersion(ctx context.Context) ([]*models.RequirementVersion, error)
 }
 
 type requirementsRepo struct {
 	db *gorm.DB
 }
 
-func NewRequirementRepository(db *gorm.DB) RequirementRepository {
+func NewRequirementRepository(db *gorm.DB) *requirementsRepo {
 	return &requirementsRepo{
 		db: db,
 	}
@@ -134,4 +135,22 @@ func (r *requirementsRepo) GetVersion(ctx context.Context, semesterID int64) dec
 	}
 
 	return m.Version.Add(decimal.NewFromFloat(0.01))
+}
+
+func (r *requirementsRepo) GetRequirementSemesterVersion(ctx context.Context) (
+	[]*models.RequirementVersion, error,
+) {
+	var results []*models.RequirementVersion
+	if err := r.db.WithContext(ctx).
+		Select("DISTINCT ON (semester_id, version) id, semester_id, version").
+		Order(clause.OrderBy{Columns: []clause.OrderByColumn{
+			{Column: clause.Column{Name: "semester_id"}, Desc: false},
+			{Column: clause.Column{Name: "version"}, Desc: false},
+		}}).
+		Find(&results).
+		Error; err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

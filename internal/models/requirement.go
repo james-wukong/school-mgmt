@@ -23,3 +23,9 @@ type Requirements struct {
 	Teacher  *Teachers  `gorm:"foreignKey:TeacherID" json:"teacher,omitempty"`
 	Class    *Classes   `gorm:"foreignKey:ClassID" json:"class,omitempty"`
 }
+
+type RequirementVersion struct {
+	ID         int64           `gorm:"primaryKey;column:id;default:nextval('requirements_id_seq')" json:"id"`
+	SemesterID int64           `gorm:"column:semester_id;not null;index:idx_requirements_semester" json:"semester_id"`
+	Version    decimal.Decimal `gorm:"column:version;type:numeric(10,2);default:1.00" json:"version"`
+}

@@ -23,7 +23,7 @@ type subjectRepo struct {
 	db *gorm.DB
 }
 
-func NewSubjectRepository(db *gorm.DB) SubjectRepository {
+func NewSubjectRepository(db *gorm.DB) *subjectRepo {
 	return &subjectRepo{
 		db: db,
 	}
