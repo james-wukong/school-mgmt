@@ -104,9 +104,9 @@ func GetGenerateSchedulesTable(dbConn *gorm.DB) table.Generator {
 					return true, "processing", ""
 				}),
 		)
-
-		info.SetPageSizeList([]int{20, 40, 80, 120}).SetDefaultPageSize(40)
-		info.SetTable("requirements").SetTitle("Requirements").SetDescription("Requirements")
+		info.HideDeleteButton()
+		info.SetPageSizeList([]int{5, 10, 20, 40}).SetDefaultPageSize(10)
+		info.SetTable("requirements").SetTitle("Schedule Generation").SetDescription("Schedule Generation")
 		info.SetGetDataFn(func(param parameter.Parameters) (data []map[string]interface{}, size int) {
 			var reqs []*models.RequirementVersion
 			// 1. Create the initial query
@@ -115,22 +115,35 @@ func GetGenerateSchedulesTable(dbConn *gorm.DB) table.Generator {
 				Select("DISTINCT ON (semester_id, version) id, semester_id, version").
 				Where("school_id = ?", u.SchoolID).
 				Order(clause.OrderBy{Columns: []clause.OrderByColumn{
-					{Column: clause.Column{Name: "semester_id"}, Desc: false},
-					{Column: clause.Column{Name: "version"}, Desc: false},
+					{Column: clause.Column{Name: "semester_id"}, Desc: true},
+					{Column: clause.Column{Name: "version"}, Desc: true},
 				}})
+
 			// 2. Handle standard Go-Admin filtering/sorting
+			if semesterID := param.GetFieldValue("semester_id"); semesterID != "" {
+				semID, err := strconv.ParseInt(semesterID, 10, 64)
+				if err != nil {
+					return []map[string]interface{}{
+						{"error": err.Error()},
+					}, 0
+				}
+				query = query.Where("semester_id = ?", semID)
+			}
+
 			if param.SortField != "" {
 				query = query.Order(param.SortField + " " + param.SortType)
 			}
+			// 3. Handle Global Search (The 'Search' box top-right) and Apply Pagination
+			query = query.Offset((param.PageInt - 1) * param.PageSizeInt).Limit(param.PageSizeInt)
 
-			// 3. Execute the query
+			// 4. Execute the query
 			if err := query.Find(&reqs).Error; err != nil {
 				return []map[string]interface{}{
 					{"error": err.Error()},
 				}, 0
 			}
 
-			// 4. Return the mapped data and the total count for pagination
+			// 5. Return the mapped data and the total count for pagination
 			result := make([]map[string]interface{}, len(reqs))
 			for i := range reqs {
 				result[i] = map[string]interface{}{

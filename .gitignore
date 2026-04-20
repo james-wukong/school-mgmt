@@ -3,6 +3,7 @@ tmp/
 storage/
 logs/*
 build
+uploads/
 
 
 # IDE and Editor files

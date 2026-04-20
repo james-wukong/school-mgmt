@@ -34,6 +34,12 @@ type ScheduleUpdateRequest struct {
 	ScheduleBase
 }
 
+type ScheduleExportRequest struct {
+	SemesterID   int64           `json:"semester_id" form:"semester_id" csv:"semester_id" validate:"required"`
+	SchoolID     int64           `json:"school_id" form:"school_id" validate:"required"`
+	SchedVersion decimal.Decimal `json:"schedule_version" form:"schedule_version" validate:"-"`
+}
+
 func (req *ScheduleBase) toModel() (*models.Schedules, error) {
 	return &models.Schedules{
 		SchoolID:      req.SchoolID,

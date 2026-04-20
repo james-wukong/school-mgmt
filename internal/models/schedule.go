@@ -34,3 +34,9 @@ type Schedules struct {
 	Semester    *Semesters    `gorm:"foreignKey:SemesterID" json:"semester,omitempty"`
 	Timeslot    *Timeslots    `gorm:"foreignKey:TimeslotID" json:"timeslot,omitempty"`
 }
+type ScheduleVersion struct {
+	ID         int64           `gorm:"primaryKey;column:id;default:nextval('requirements_id_seq')" json:"id"`
+	SemesterID int64           `gorm:"column:semester_id;not null;index:idx_requirements_semester" json:"semester_id"`
+	Status     ScheduleStatus  `gorm:"column:status;type:schedule_status_enum;default:'Draft';index:idx_schedules_status" json:"status"`
+	Version    decimal.Decimal `gorm:"column:version;type:numeric(10,2);default:1.00" json:"version"`
+}
