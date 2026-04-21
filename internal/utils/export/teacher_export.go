@@ -86,5 +86,13 @@ func (s *TeacherReportService) ExportToCSV(
 		currentStartTime = rows[i].StartTime
 	}
 
+	// After the loop ends, check if there is an unwritten row
+	// This writes the last displayRow to CSV file
+	if !time.Time(currentStartTime).IsZero() {
+		if err := writer.Write(displayRow); err != nil {
+			return err
+		}
+	}
+	writer.Flush() // Always a good habit to flush the buffer at the end
 	return nil
 }

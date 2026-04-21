@@ -72,7 +72,7 @@ func (s *ClassReportService) ExportToCSV(
 		}
 		// fill display slice
 		if displayRow[0] == "" {
-			displayRow[0] = fmt.Sprintf("%d (%s)", rows[i].Grade, rows[i].ClassName)
+			displayRow[0] = fmt.Sprintf("%d - (%s)", rows[i].Grade, rows[i].ClassName)
 		}
 		if displayRow[1] == "" {
 			displayRow[1] = time.Time(rows[i].StartTime).Format("15:04")
@@ -86,5 +86,13 @@ func (s *ClassReportService) ExportToCSV(
 		currentStartTime = rows[i].StartTime
 	}
 
+	// After the loop ends, check if there is an unwritten row
+	// This writes the last displayRow to CSV file
+	if !time.Time(currentStartTime).IsZero() {
+		if err := writer.Write(displayRow); err != nil {
+			return err
+		}
+	}
+	writer.Flush() // Always a good habit to flush the buffer at the end
 	return nil
 }

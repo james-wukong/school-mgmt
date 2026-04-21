@@ -99,9 +99,9 @@ func GetSchedulesTable(dbConn *gorm.DB) table.Generator {
 
 				// Return a styled link or button
 				return template.HTML(fmt.Sprintf(`
-                <a href="%s" target="_blank" class="btn btn-xs btn-primary" download>
+                <a href=%s target="_blank" class="btn btn-xs btn-primary" download=%s>
                     <i class="fa fa-download"></i> %s
-                </a>`, downloadURL, filepath.Base(fname)))
+                </a>`, downloadURL, filepath.Base(fname), filepath.Base(fname)))
 			})
 
 		info.AddField("Teacher Report", "teacher_report", db.Varchar).
@@ -124,9 +124,9 @@ func GetSchedulesTable(dbConn *gorm.DB) table.Generator {
 
 				// Return a styled link or button
 				return template.HTML(fmt.Sprintf(`
-                <a href="%s" target="_blank" class="btn btn-xs btn-primary" download>
+                <a href=%s target="_blank" class="btn btn-xs btn-primary" download=%s>
                     <i class="fa fa-download"></i> %s
-                </a>`, downloadURL, filepath.Base(fname)))
+                </a>`, downloadURL, filepath.Base(fname), filepath.Base(fname)))
 			})
 
 		info.HideDeleteButton()
