@@ -5,6 +5,7 @@ import (
 
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	"github.com/james-wukong/online-school-mgmt/internal/repositories"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -18,19 +19,19 @@ func NewReportService(db *gorm.DB) *ReportService {
 	}
 }
 func (s *ReportService) GetWeeklyClassReport(
-	ctx context.Context, semesterID int64, version float64,
+	ctx context.Context, semesterID int64, version decimal.Decimal,
 ) ([]models.WeeklyClassScheduleReport, error) {
 	return s.repo.GetWeeklyClassReport(ctx, semesterID, version)
 }
 
 func (s *ReportService) GetWeeklyTeacherReport(
-	ctx context.Context, semesterID int64, version float64,
+	ctx context.Context, semesterID int64, version decimal.Decimal,
 ) ([]models.WeeklyTeacherScheduleReport, error) {
 	return s.repo.GetWeeklyTeacherReport(ctx, semesterID, version)
 }
 
 func (s *ReportService) GetMaxDay(
-	ctx context.Context, semesterID int64, version float64,
+	ctx context.Context, semesterID int64, version decimal.Decimal,
 ) int {
 	return s.repo.GetMaxDay(ctx, semesterID, version)
 }

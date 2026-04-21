@@ -10,6 +10,7 @@ import (
 
 	"github.com/james-wukong/online-school-mgmt/internal/repositories"
 	"github.com/james-wukong/online-school-mgmt/internal/types"
+	"github.com/shopspring/decimal"
 )
 
 // ClassReportService handles the export logic
@@ -24,11 +25,10 @@ func NewClassReportService(repo repositories.ReportRepository) *ClassReportServi
 
 // ExportToCSV writes the schedule data to the provided writer
 func (s *ClassReportService) ExportToCSV(
-	ctx context.Context, w io.Writer, semesterID int64, version float64,
+	ctx context.Context, w io.Writer, semesterID int64, version decimal.Decimal,
 ) error {
 	writer := csv.NewWriter(w)
 	defer writer.Flush()
-
 	// 1. Fetch sorted data
 	rows, err := s.repo.GetWeeklyClassReport(ctx, semesterID, version)
 	if err != nil {

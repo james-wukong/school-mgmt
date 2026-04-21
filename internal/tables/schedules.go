@@ -2,6 +2,10 @@ package tables
 
 import (
 	"fmt"
+	"html/template"
+	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/GoAdminGroup/go-admin/context"
@@ -11,6 +15,7 @@ import (
 	"github.com/GoAdminGroup/go-admin/plugins/admin/modules/table"
 	"github.com/GoAdminGroup/go-admin/template/types"
 	"github.com/GoAdminGroup/go-admin/template/types/form"
+	"github.com/james-wukong/online-school-mgmt/internal/config"
 	"github.com/james-wukong/online-school-mgmt/internal/models"
 	"github.com/james-wukong/online-school-mgmt/internal/services"
 	"gorm.io/gorm"
@@ -20,7 +25,7 @@ import (
 func GetSchedulesTable(dbConn *gorm.DB) table.Generator {
 	return func(ctx *context.Context) table.Table {
 		schedules := table.NewDefaultTable(ctx, table.DefaultConfigWithDriver("postgresql"))
-
+		cfg := config.InitConfig()
 		user := auth.Auth(ctx)
 		userService := services.NewAdminUserService(dbConn)
 		semService := services.NewSemesterService(dbConn)
@@ -73,6 +78,55 @@ func GetSchedulesTable(dbConn *gorm.DB) table.Generator {
 
 		info.AddField("Version", "version", db.Varchar)
 		info.AddField("Status", "status", db.Varchar)
+		info.AddField("Class Report", "class_report", db.Varchar).
+			FieldDisplay(func(model types.FieldModel) interface{} {
+				fname := printExportFilename("class_report",
+					model.Row["version"].(string),
+					model.Row["semester_id"].(int64),
+				)
+				fname = filepath.Join(cfg.App.ExportDownloadPath, fname)
+				// check file existence
+				if _, err := os.Stat(fname); err != nil {
+					fmt.Printf("filename: %s, error: %+v\n", fname, err)
+					return ""
+				}
+				downloadURL, err := url.JoinPath(cfg.App.ExportDownloadURI, filepath.Base(fname))
+				if err != nil {
+					fmt.Printf("downloadUrl: %s, error: %+v\n", downloadURL, err)
+					return ""
+				}
+
+				// Return a styled link or button
+				return template.HTML(fmt.Sprintf(`
+                <a href="%s" target="_blank" class="btn btn-xs btn-primary" download>
+                    <i class="fa fa-download"></i> %s
+                </a>`, downloadURL, filepath.Base(fname)))
+			})
+
+		info.AddField("Teacher Report", "teacher_report", db.Varchar).
+			FieldDisplay(func(model types.FieldModel) interface{} {
+				fname := printExportFilename("teacher_report",
+					model.Row["version"].(string),
+					model.Row["semester_id"].(int64),
+				)
+				fname = filepath.Join(cfg.App.ExportDownloadPath, fname)
+				// check file existence
+				if _, err := os.Stat(fname); err != nil {
+					fmt.Printf("filename: %s, error: %+v\n", fname, err)
+					return ""
+				}
+				downloadURL, err := url.JoinPath(cfg.App.ExportDownloadURI, filepath.Base(fname))
+				if err != nil {
+					fmt.Printf("downloadUrl: %s, error: %+v\n", downloadURL, err)
+					return ""
+				}
+
+				// Return a styled link or button
+				return template.HTML(fmt.Sprintf(`
+                <a href="%s" target="_blank" class="btn btn-xs btn-primary" download>
+                    <i class="fa fa-download"></i> %s
+                </a>`, downloadURL, filepath.Base(fname)))
+			})
 
 		info.HideDeleteButton()
 		info.SetTable("schedules").SetTitle("Schedules").SetDescription("Schedules")

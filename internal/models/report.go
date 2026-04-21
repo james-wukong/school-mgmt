@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/james-wukong/online-school-mgmt/internal/types"
+	"github.com/shopspring/decimal"
 )
 
 type ScheduleDetailsReport struct {
@@ -13,7 +14,7 @@ type ScheduleDetailsReport struct {
 	TeacherID     int64           `gorm:"column:teacher_id"`
 	ClassID       int64           `gorm:"column:class_id"`
 	RoomID        *int64          `gorm:"column:room_id"`
-	Version       float64         `gorm:"column:version"`
+	Version       decimal.Decimal `gorm:"column:version;type:numeric(10,2);default:1.00"`
 	TeacherName   string          `gorm:"column:teacher_name"`
 	SubjectName   string          `gorm:"column:subject_name"`
 	Grade         int             `gorm:"column:grade"`
@@ -31,7 +32,7 @@ func (ScheduleDetailsReport) TableName() string {
 type WeeklyClassScheduleReport struct {
 	SemesterID  int64           `gorm:"column:semester_id"`
 	ClassID     int64           `gorm:"column:class_id"`
-	Version     float64         `gorm:"column:version"`
+	Version     decimal.Decimal `gorm:"column:version;type:numeric(10,2);default:1.00"`
 	Grade       int             `gorm:"column:grade"`
 	ClassName   string          `gorm:"column:class_name"`
 	TeacherName string          `gorm:"column:teacher_name"`
@@ -49,7 +50,7 @@ func (WeeklyClassScheduleReport) TableName() string {
 type WeeklyTeacherScheduleReport struct {
 	SemesterID  int64           `gorm:"column:semester_id"`
 	TeacherID   int64           `gorm:"column:teacher_id"`
-	Version     float64         `gorm:"column:version"`
+	Version     decimal.Decimal `gorm:"column:version;type:numeric(10,2);default:1.00"`
 	Grade       int             `gorm:"column:grade"`
 	ClassName   string          `gorm:"column:class_name"`
 	TeacherName string          `gorm:"column:teacher_name"`

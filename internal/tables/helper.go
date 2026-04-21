@@ -3,6 +3,7 @@ package tables
 import (
 	"fmt"
 	"html/template"
+	"path/filepath"
 )
 
 func printDualListBoxJS(sourceField, targetField, url string, params ...map[string]any) template.HTML {
@@ -199,4 +200,8 @@ func printSampleTimeslotsJSON() string {
     {"day": 5, "start_time": "15:00", "end_time": "15:45"}
 ]
 `
+}
+
+func printExportFilename(prefix, version string, semesterID int64) string {
+	return filepath.Base(fmt.Sprintf("%s_s_%d_v_%s.csv", prefix, semesterID, version))
 }

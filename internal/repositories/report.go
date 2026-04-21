@@ -5,26 +5,27 @@ import (
 	"io"
 
 	"github.com/james-wukong/online-school-mgmt/internal/models"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 type ReportRepository interface {
 	GetWeeklyClassReport(
-		ctx context.Context, semesterID int64, version float64,
+		ctx context.Context, semesterID int64, version decimal.Decimal,
 	) ([]models.WeeklyClassScheduleReport, error)
 
 	GetWeeklyTeacherReport(
-		ctx context.Context, semesterID int64, version float64,
+		ctx context.Context, semesterID int64, version decimal.Decimal,
 	) ([]models.WeeklyTeacherScheduleReport, error)
 
 	GetMaxDay(
-		ctx context.Context, semesterID int64, version float64,
+		ctx context.Context, semesterID int64, version decimal.Decimal,
 	) int
 }
 
 type ReportService interface {
-	ExportToCSV(ctx context.Context, w io.Writer, semesterID int64, version float64) error
+	ExportToCSV(ctx context.Context, w io.Writer, semesterID int64, version decimal.Decimal) error
 }
 
 type reportsRepo struct {
@@ -38,7 +39,7 @@ func NewReportRepository(db *gorm.DB) *reportsRepo {
 }
 
 func (r *reportsRepo) GetWeeklyClassReport(
-	ctx context.Context, semesterID int64, version float64,
+	ctx context.Context, semesterID int64, version decimal.Decimal,
 ) ([]models.WeeklyClassScheduleReport, error) {
 	// get report from VIEW: vw_class_weekly_schedule
 	var schedules []models.WeeklyClassScheduleReport
@@ -60,7 +61,7 @@ func (r *reportsRepo) GetWeeklyClassReport(
 }
 
 func (r *reportsRepo) GetWeeklyTeacherReport(
-	ctx context.Context, semesterID int64, version float64,
+	ctx context.Context, semesterID int64, version decimal.Decimal,
 ) ([]models.WeeklyTeacherScheduleReport, error) {
 	// get report from VIEW: vw_teacher_weekly_schedule
 	var schedules []models.WeeklyTeacherScheduleReport
@@ -81,7 +82,7 @@ func (r *reportsRepo) GetWeeklyTeacherReport(
 }
 
 func (r *reportsRepo) GetMaxDay(
-	ctx context.Context, semesterID int64, version float64,
+	ctx context.Context, semesterID int64, version decimal.Decimal,
 ) int {
 	var maxDay int
 	if err := r.db.WithContext(ctx).

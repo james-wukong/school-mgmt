@@ -32,11 +32,11 @@ func ExportReportHandler(dbConn *gorm.DB) context.Handler {
 		// 2. Load extra configurations
 		cfg := config.InitConfig()
 		// Save to csv file
-		classFileName := fmt.Sprintf("class_report_s_%d_v_%.2f.cvs",
-			reqData.SemesterID, reqData.SchedVersion.InexactFloat64(),
+		classFileName := fmt.Sprintf("class_report_s_%d_v_%s.csv",
+			reqData.SemesterID, reqData.SchedVersion.String(),
 		)
-		teacherFileName := fmt.Sprintf("teacher_report_s_%d_v_%.2f.cvs",
-			reqData.SemesterID, reqData.SchedVersion.InexactFloat64(),
+		teacherFileName := fmt.Sprintf("teacher_report_s_%d_v_%s.csv",
+			reqData.SemesterID, reqData.SchedVersion.String(),
 		)
 
 		reportRepo := repositories.NewReportRepository(dbConn)
@@ -45,7 +45,7 @@ func ExportReportHandler(dbConn *gorm.DB) context.Handler {
 		var reportService repositories.ReportService
 		for _, filename := range []string{classFileName, teacherFileName} {
 			f, err := os.Create(filepath.Join(
-				cfg.App.ExportDownloadURI, filepath.Base(filename),
+				cfg.App.ExportDownloadPath, filepath.Base(filename),
 			))
 			if err != nil {
 				ctx.JSON(http.StatusBadRequest, map[string]interface{}{
@@ -72,7 +72,7 @@ func ExportReportHandler(dbConn *gorm.DB) context.Handler {
 				reportService = teacherService
 			}
 			if err := reportService.ExportToCSV(ctx.Request.Context(),
-				f, reqData.SemesterID, reqData.SchedVersion.InexactFloat64(),
+				f, reqData.SemesterID, reqData.SchedVersion,
 			); err != nil {
 				ctx.JSON(http.StatusBadRequest, map[string]interface{}{
 					"code":    http.StatusBadRequest,

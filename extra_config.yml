@@ -1,7 +1,8 @@
 app:
-  sample_download_uri: "http://127.0.0.1:8091/uploads/samples"
-  export_download_uri: "http://127.0.0.1:8091/uploads/exports"
-  schedule_api: "http://school-schedule-container:8092"
+  sample_download_uri: "http://127.0.0.1:8091/uploads/samples/"
+  export_download_uri: "http://127.0.0.1:8091/uploads/exports/"
+  export_download_path: "uploads/exports/"
+  schedule_api: "http://school-schedule-container:8092/"
 
 kafka:
   brokers:

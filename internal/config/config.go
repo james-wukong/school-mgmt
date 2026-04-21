@@ -12,9 +12,10 @@ type Config struct {
 }
 
 type AppConfig struct {
-	SampleDownloadURI string `mapstructure:"sample_download_uri"`
-	ExportDownloadURI string `mapstructure:"export_download_uri"`
-	ScheduleAPI       string `mapstructure:"schedule_api"`
+	SampleDownloadURI  string `mapstructure:"sample_download_uri"`
+	ExportDownloadURI  string `mapstructure:"export_download_uri"`
+	ExportDownloadPath string `mapstructure:"export_download_path"`
+	ScheduleAPI        string `mapstructure:"schedule_api"`
 }
 
 type KafkaConfig struct {

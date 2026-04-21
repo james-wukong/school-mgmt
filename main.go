@@ -4,8 +4,10 @@ import (
 	"errors"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"time"
 
 	_ "github.com/GoAdminGroup/go-admin/adapter/gin"                 // web framework adapter
 	_ "github.com/GoAdminGroup/go-admin/modules/db/drivers/postgres" // sql driver
@@ -73,10 +75,20 @@ func startServer() {
 		"msg": "Hello world",
 	})
 
-	if err := r.Run(":8091"); err != nil {
-		panic(err)
+	// if err := r.Run(":8091"); err != nil {
+	// 	panic(err)
+	// }
+	srv := &http.Server{
+		Addr:         ":8091",
+		Handler:      r,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
+	if err := srv.ListenAndServe(); err != nil {
+		panic(err)
+	}
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
