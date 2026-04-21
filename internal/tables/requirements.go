@@ -52,6 +52,14 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 		} else {
 			info.AddField("School_id", "school_id", db.Int8).FieldHide()
 		}
+
+		info.AddField("Version", "version", db.Varchar).
+			FieldFilterable(types.FilterType{
+				FormType: form.Text,
+				Operator: types.FilterOperatorEqual,
+				Width:    450,
+			}).
+			FieldSortable()
 		info.AddField("Semester", "semester_id", db.Int8).
 			FieldDisplay(func(model types.FieldModel) interface{} {
 				semID, err := strconv.ParseInt(model.Value, 10, 64)
@@ -164,13 +172,6 @@ func GetRequirementsTable(dbConn *gorm.DB) table.Generator {
 		info.AddField("Weekly_sessions", "weekly_sessions", db.Int4)
 		info.AddField("Min_day_gap", "min_day_gap", db.Int4)
 		info.AddField("Preferred_days", "preferred_days", db.Varchar)
-		info.AddField("Version", "version", db.Varchar).
-			FieldFilterable(types.FilterType{
-				FormType: form.Text,
-				Operator: types.FilterOperatorEqual,
-				Width:    450,
-			}).
-			FieldSortable()
 		// Buttons
 		info.AddButton(ctx, "批量创建", icon.Tv,
 			action.PopUpWithIframe(
