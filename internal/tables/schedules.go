@@ -76,7 +76,8 @@ func GetSchedulesTable(dbConn *gorm.DB) table.Generator {
 			FieldFilterOptions(semFilterOpts).
 			FieldSortable()
 
-		info.AddField("Version", "version", db.Varchar)
+		info.AddField("Schedule Version", "version", db.Varchar)
+		info.AddField("Requirement Version", "requirement_version", db.Varchar)
 		info.AddField("Status", "status", db.Varchar)
 		info.AddField("Class Report", "class_report", db.Varchar).
 			FieldDisplay(func(model types.FieldModel) interface{} {
@@ -135,8 +136,14 @@ func GetSchedulesTable(dbConn *gorm.DB) table.Generator {
 			// 1. Create the initial query
 			query := dbConn.WithContext(ctx.Request.Context()).
 				Table("schedules").
-				Select("DISTINCT ON (semester_id, version) id, status, semester_id, version").
-				Where("school_id = ?", u.SchoolID).
+				Select(`DISTINCT ON (semester_id, version)
+					schedules.id as id,
+					schedules.status as status,
+					schedules.semester_id as semester_id,
+					schedules.version as version,
+					requirements.version as requirement_version`).
+				Joins("left join requirements on schedules.requirement_id = requirements.id").
+				Where("schedules.school_id = ?", u.SchoolID).
 				Order(clause.OrderBy{Columns: []clause.OrderByColumn{
 					{Column: clause.Column{Name: "semester_id"}, Desc: true},
 					{Column: clause.Column{Name: "version"}, Desc: true},
@@ -170,10 +177,11 @@ func GetSchedulesTable(dbConn *gorm.DB) table.Generator {
 			result := make([]map[string]interface{}, len(reqs))
 			for i := range reqs {
 				result[i] = map[string]interface{}{
-					"id":          reqs[i].ID,
-					"semester_id": reqs[i].SemesterID,
-					"status":      string(reqs[i].Status),
-					"version":     reqs[i].Version.String(),
+					"id":                  reqs[i].ID,
+					"semester_id":         reqs[i].SemesterID,
+					"status":              string(reqs[i].Status),
+					"version":             reqs[i].Version.String(),
+					"requirement_version": reqs[i].RequirementVersion.String(),
 				}
 			}
 			return result, len(result)
