@@ -38,17 +38,8 @@ func (s *TeacherReportService) ExportToCSV(
 	maxDay := s.repo.GetMaxDay(ctx, semesterID, version)
 
 	// 3. Write Headers
-	dayIndex := map[int]string{
-		2: "Monday", 3: "Tuesday", 4: "Wednesday",
-		5: "Thursday", 6: "Friday", 7: "Saturday", 8: "Sunday",
-	}
-	headers := []string{"Class", "Timeslot"}
-	for day := range maxDay {
-		if day <= 6 {
-			headers = append(headers, dayIndex[day+2])
-		}
-	}
-	if err := writer.Write(headers); err != nil {
+	headers := createHeaders(maxDay)
+	if err := writeHeaders(writer, headers); err != nil {
 		return err
 	}
 

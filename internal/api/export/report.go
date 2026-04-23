@@ -12,6 +12,7 @@ import (
 	"github.com/james-wukong/online-school-mgmt/internal/dto"
 	"github.com/james-wukong/online-school-mgmt/internal/repositories"
 	utils "github.com/james-wukong/online-school-mgmt/internal/utils/export"
+	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 )
 
@@ -43,6 +44,7 @@ func ExportReportHandler(dbConn *gorm.DB) context.Handler {
 		classService := utils.NewClassReportService(reportRepo)
 		teacherService := utils.NewTeacherReportService(reportRepo)
 		var reportService repositories.ReportService
+		g := new(errgroup.Group)
 		for _, filename := range []string{classFileName, teacherFileName} {
 			f, err := os.Create(filepath.Join(
 				cfg.App.ExportDownloadPath, filepath.Base(filename),
@@ -71,16 +73,21 @@ func ExportReportHandler(dbConn *gorm.DB) context.Handler {
 			case teacherFileName:
 				reportService = teacherService
 			}
-			if err := reportService.ExportToCSV(ctx.Request.Context(),
-				f, reqData.SemesterID, reqData.SchedVersion,
-			); err != nil {
-				ctx.JSON(http.StatusBadRequest, map[string]interface{}{
-					"code":    http.StatusBadRequest,
-					"msg":     err.Error(),
-					"success": false,
-				})
-				return
-			}
+
+			g.Go(func() error {
+				return reportService.ExportToCSV(ctx.Request.Context(),
+					f, reqData.SemesterID, reqData.SchedVersion,
+				)
+			})
+		}
+		// 3. Pause here until the counter is 0
+		// Wait blocks until all finish AND returns the first error found
+		if err := g.Wait(); err != nil {
+			ctx.JSON(http.StatusBadRequest, map[string]interface{}{
+				"code":    http.StatusBadRequest,
+				"msg":     err.Error(),
+				"success": false,
+			})
 		}
 
 		ctx.JSON(http.StatusOK, map[string]interface{}{
